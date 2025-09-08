@@ -43,7 +43,7 @@ async function vistaReserva(){
 
 async function formularioCalendario(objeto){
 	bloquea();
-	const cliente = await axios.get("/api/cliente/listar/0/"+verSesion(),{ 
+	const cliente = await axios.get("/api/cliente/buscar/"+verSesion()+"/"+verSesion(),{ 
 		headers:{
 			authorization: `Bearer ${verToken()}`
 		} 
@@ -58,7 +58,6 @@ async function formularioCalendario(objeto){
 	desbloquea();
 	const resp=cliente.data.valor.info;
 	const resp2=empleado.data.valor.info;
-
 	let listado=`<form id="${objeto.tabla}">
 					<span class='oculto muestraId'>0</span>
 					<span class='oculto muestraNombre'></span>
@@ -66,13 +65,8 @@ async function formularioCalendario(objeto){
 						<div class="form-group col-md-4">
 							<label>Cliente (*)</label>
 							<select name="cliente" class="form-control select2 muestraMensaje">
-								<option value="">Select...</option>`;
-								for(var i=0;i<resp.length;i++){
-									if(resp[i].ES_VIGENTE==1){
-								listado+=`<option value="${resp[i].ID_CLIENTE}">${resp[i].APELLIDO_PATERNO+" "+resp[i].APELLIDO_MATERNO+" "+resp[i].NOMBRE}</option>`;
-									}
-								}
-					listado+=`</select>
+								<option value="${resp.ID_CLIENTE}">${resp.APELLIDO_PATERNO+" "+resp.APELLIDO_MATERNO+" "+resp.NOMBRE}</option>			
+							</select>
 							<div class="vacio oculto">¡Campo obligatorio!</div>
 						</div>
 						<div class="form-group col-md-4">

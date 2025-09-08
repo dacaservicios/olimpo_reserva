@@ -62,7 +62,7 @@ const verificarLogin = async (req, res, next)=>{
                     res.json({
                         valor:{
                             resultado : true,
-                            idUser: row[0][0].ID_USUARIO
+                            idUser: row[0][0].ID_CLIENTE
                         }
                     }); 
                 }else{
@@ -297,6 +297,42 @@ const passwordAleatorio = async ()=>{
     return nuevaPass;
 }
 
+const verificaAdjunto = (req, res, next)=>{
+    var doc=0;
+    var mensajeAdjunto='';
+    req.archivo=0; 
+    if(req.files==null){
+        doc=1;
+    }else{
+        if(typeof req.files.imagen=== 'object'){
+            uploadedFile = req.files.imagen;
+            let extension = uploadedFile.name.split('.').pop();
+            let tamanio = uploadedFile.size;
+
+            if(config.TAMANO_ADJUNTO<tamanio){
+                mensajeAdjunto='¡El documento no debe ser mayor a 1MB!, ';
+            }else if(!config.FORMATOS_IMAGEN.includes(extension)){
+                mensajeAdjunto='¡El documento debe tener formato: jpg, jpeg, png!, ';
+            }else{
+                doc=1;
+                req.archivo=1;
+            }
+        }
+    }
+
+    if(doc>=1){
+        return next(); 
+    }else{
+        res.json({
+            valor:{
+                resultado : false,
+                mensaje : mensajeAdjunto
+            }
+        });
+    }
+ 
+}
+
 
 module.exports = {
     isLogin,
@@ -307,5 +343,6 @@ module.exports = {
     caracter,
     validaSchema,
     verificarDocumento,
-    passwordAleatorio
+    passwordAleatorio,
+    verificaAdjunto
 }

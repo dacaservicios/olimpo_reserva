@@ -81,7 +81,7 @@ const cambiaDatos = async (id,img, body,sesId)=>{
 }
 
 const verificaPassword = async (id,body)=>{  
-    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,

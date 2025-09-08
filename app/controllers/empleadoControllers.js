@@ -3,7 +3,7 @@ const {buscarEmpleado,listarEmpleado} = require('../models/empleadoModels');
 const listar=(req, res)=>{
     const id =  req.params.id;
     const sesId=req.params.sesId;
-    listarEmpleado(id,'empleado',sesId)
+    listarEmpleado(id,'empleado_reserva',sesId)
     .then(valor => {
         res.json({
             valor : valor

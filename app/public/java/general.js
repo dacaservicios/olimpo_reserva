@@ -101,7 +101,7 @@ function vistaCambiaPassword(){
 
 function miPerfil(){
     try{
-		$('#jsPropio').html("<script src='/java/usuarioPerfil.js?"+moment().format('DDMMYYYYHHmmss')+"'></script>");
+		$('#jsPropio').html("<script src='/java/clientePerfil.js?"+moment().format('DDMMYYYYHHmmss')+"'></script>");
     }catch (err) {
 		desbloquea();	
 		message=err.response.data.error.message;
@@ -111,7 +111,7 @@ function miPerfil(){
 }
 
 async function datosUsuario(){
-    bloquea('Cargando datos de usuario...');
+    bloquea('Cargando datos del cliente...');
     try {
         const datosUsuario=await axios.get('/api/inicio/datos/'+verSesion(),{ 
             headers: 

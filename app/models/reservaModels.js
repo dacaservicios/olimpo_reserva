@@ -4,7 +4,7 @@ const config = require('../config/config');
 const axios = require('axios');
 
 const crearReserva = async (body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
     const row= await pool.query(query,
     [
         0,
@@ -46,7 +46,7 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 const editarReserva = async (id,body)=>{
 
-    const query = `CALL USP_UPD_INS_RESERVA(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,
@@ -87,7 +87,7 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 }
 
 const editarReservaDD = async (id,body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,

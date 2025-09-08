@@ -4,7 +4,7 @@ const path = require('path');
 const listar=(req, res)=>{
     const id =  req.params.id;
     const sesId=req.params.sesId;
-    listarReserva(id,'reserva',sesId)
+    listarReserva(id,'reserva_cliente',sesId)
     .then(valor => {
         res.json({
             valor : valor
