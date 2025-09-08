@@ -253,7 +253,6 @@ function activarCalendario(objeto){
 					offset: [0, 10], // Espaciado entre el elemento y el tooltip
 				});
             
-            el.after(newEl);
 		},
 		eventMouseLeave: function(mouseLeaveInfo){
 			/*let tooltip = document.querySelector(".fc-hoverable-event");
