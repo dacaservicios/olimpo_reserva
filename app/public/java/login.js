@@ -119,8 +119,7 @@ function loginOk(objeto, idUser, idNivel){
 		data:{
 			txtCorreo:objeto.elementos.correo.val(),
 			txtContrasena:objeto.elementos.contrasena.val(),
-			idUser:idUser,
-			idNivel:idNivel
+			idUser:idUser
 		},
 		success: function(msg) {
 			resp=msg.valor;

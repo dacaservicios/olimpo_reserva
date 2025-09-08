@@ -1,49 +1,28 @@
-const {buscarCliente,listarCliente} = require('../models/clienteModels');
+const {cambiaPassword,salirLogin,verificaPassword} = require('../models/accesoModels');
 
-const listar=(req, res)=>{
-    const id =  req.params.id;
-    const sesId=req.params.sesId;
-    listarCliente(id,'cliente',sesId)
-    .then(valor => {
-        res.json({
-            valor : valor
-        });
-    })
-    .catch(error => {
-        res.status(400).json({
-            error : {
-                message:error.message,
-                errno: error.errno,
-                code : error.code
-            }
-        });
-    }); 
-}
-
-const listar_wp=(req, res)=>{
-    const id =  req.params.id;
-    const sesId=req.params.sesId;
-    listarCliente(id,'cliente_wp',sesId)
-    .then(valor => {
-        res.json({
-            valor : valor
-        });
-    })
-    .catch(error => {
-        res.status(400).json({
-            error : {
-                message:error.message,
-                errno: error.errno,
-                code : error.code
-            }
-        });
-    }); 
-}
-
-const buscar=(req, res)=>{
+const password=(req, res)=>{
     const sesId =  req.params.sesId;
-    const id =  req.params.id;
-    buscarCliente(id,'cliente',sesId)
+    cambiaPassword(sesId, req.body)
+    .then(valor => {
+        //req.logOut();
+        res.json({
+            valor : valor
+        });
+    })
+    .catch(error => {
+        res.status(400).json({
+            error : {
+                message:error.message,
+                errno: error.errno,
+                code : error.code
+            }
+        });
+    });
+}
+
+const verificaPass=(req, res)=>{
+    const sesId =  req.params.sesId;
+    verificaPassword(sesId,req.body)
     .then(valor => {
         res.json({
             valor : valor
@@ -57,11 +36,35 @@ const buscar=(req, res)=>{
                 code : error.code
             }
         });
-    }); 
+    });
 }
+
+const logout=(req, res)=>{
+    const sesId =  req.params.sesId;
+    const ip =  req.ip;  
+    const server =  req.hostname;
+    salirLogin(sesId,ip,server)
+    .then(valor => {
+        req.logOut();
+        res.json({
+            valor : valor
+        }); 
+    })
+    .catch(error => {
+        res.status(400).json({
+            error : {
+                message:error.message,
+                errno: error.errno,
+                code : error.code
+            }
+        });
+    });
+}
+
+
 
 module.exports = {
-    listar,
-    buscar,
-    listar_wp
+    password,
+    verificaPass,
+    logout
 }

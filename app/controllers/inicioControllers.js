@@ -55,30 +55,6 @@ const datos=(req, res)=>{
     }); 
 }
 
-
-const menu=(req, res)=>{
-
-    const sesId=req.params.sesId;
-    const tabla= req.params.tabla;
-    const tabla2= req.params.tabla2;
-
-    menuInicio(sesId,tabla,tabla2)
-    .then(valor => {
-        res.json({
-            valor : valor
-        });
-    })
-    .catch(error => {
-        res.status(400).json({
-            error : {
-                message:error.message,
-                errno: error.errno,
-                code : error.code
-            }
-        });
-    }); 
-}
-
 /*const register=(req, res)=>{
     registro(req.body)
     .then(valor => {
@@ -137,55 +113,10 @@ const recupera=(req, res)=>{
     }); 
 }
 
-const dashboard=(req, res)=>{
-    const sesId=req.params.sesId
-    const tipo=req.params.tipo
-
-    dataDashboard(sesId,tipo)
-    .then(valor => {
-        res.json({
-            valor : valor
-        });
-    })
-    .catch(error => {
-        res.status(400).json({
-            error : {
-                message:error.message,
-                errno: error.errno,
-                code : error.code
-            }
-        });
-    }); 
-}
-
-const dashboardProd=(req, res)=>{
-    const sesId=req.params.sesId
-    const tipo=req.params.tipo
-
-    dataDashboardProd(sesId,tipo)
-    .then(valor => {
-        res.json({
-            valor : valor
-        });
-    })
-    .catch(error => {
-        res.status(400).json({
-            error : {
-                message:error.message,
-                errno: error.errno,
-                code : error.code
-            }
-        });
-    }); 
-}
-
 module.exports = {
     logeo,
-    menu,
     datos,
     //register,
     //olvidaPassword,
-    recupera,
-    dashboard,
-    dashboardProd
+    recupera
 }

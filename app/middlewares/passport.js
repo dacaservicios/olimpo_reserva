@@ -1,7 +1,7 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const {login} = require('../models/inicioModels');
-const {buscarUsuario} = require('../models/usuarioModels');
+const {buscarCliente} = require('../models/clienteModels');
 
 passport.use('local.login',new LocalStrategy({
     usernameField : 'txtCorreo',
@@ -34,7 +34,7 @@ passport.serializeUser((user, done)=>{
 });
 
 passport.deserializeUser((user, done)=>{
-    buscarUsuario(user.id,'usuario',user.id)
+    buscarCliente(user.id,'cliente',user.id)
     .then(valor => {
         done(null, valor);
     })

@@ -22,107 +22,16 @@ const notLogin = (req, res, next)=>{
     }
 }
 
-/*const sesion = async (req, res, next)=>{
-    const sesId=req.session.passport.user.id;
-    const body =  req.body;
-    const query = `CALL USP_SEL_VERLISTAIDMENU(?, ?, ?, ?)`;
-    if(sesId){
-        const row = await pool.query(query,
-        [
-            body.idSubmenu,
-            'sesion',
-            body.idOpcion,
-            sesId
-        ]);
-        if(row[0][0].sesion=='A'){
-            if(body.idOpcion==0){
-                res.json({
-                    valor:{
-                        resultado : true,
-                        mensaje : '¡exito!'
-                    }
-                }); 
-                return next();
-            }else{
-                if(row[0][0].eliminado==0 && row[0][0].vigente==1){
-                    res.json({
-                        valor:{
-                            resultado : true,
-                            mensaje : '¡exito!'
-                        }
-                    }); 
-                    return next();
-                }else{
-                    res.json({
-                        valor:{
-                            resultado : false,
-                            mensaje : '¡No tiene acceso a esta opción!'
-                        }
-                    }); 
-                }
-            }
-        }else{ 
-            res.json({
-                valor:{
-                    resultado : false,
-                    mensaje : '¡No tiene acceso a esta opción!'
-                }
-            });
-            //req.logOut();
-            //return res.redirect('/'); 
-        }
-    }else{
-        res.json({
-            valor:{
-                resultado : false,
-                mensaje : '¡No tiene acceso a esta opción!'
-            }
-        });
-        //req.logOut();
-        //return res.redirect('/'); 
-    }
-}*/
-
-const iniciaCaja = async (req, res, next)=>{
-    const sesId=req.body.idUser;
-    const nivel=req.body.idNivel;
-    const query = `CALL USP_SEL_VERLISTAID(?, ?, ?)`;
-    const row = await pool.query(query,
-    [
-        0,
-        'iniciacaja',
-        sesId
-    ]);
-
-    if(nivel==1 || nivel==6 || nivel==8){
-        next();
-    }else{
-        if(row[0][0].ABIERTO>0){
-            next();
-        }else{
-            res.json({
-                valor:{
-                    user : {
-                        resultado:false
-                    },
-                    mensaje : '¡El administrador no aperturo la caja del día!'
-                }
-            }); 
-        }
-    }
-};
-
 const verificarLogin = async (req, res, next)=>{
     const body =  req.body;
     const ip =  req.ip;
     const server =  req.hostname;
 
-    const query = `CALL USP_UPD_INS_REGISTRO(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         0,
         body.txtCorreo,
-        0,
         0,
         2,
         ip,
@@ -136,14 +45,6 @@ const verificarLogin = async (req, res, next)=>{
                 tipo:1
             }
         });
-    /*}else if(row[0][0].SESION=='A'){
-        res.json({
-            valor:{
-                resultado : false,
-                mensaje : '¡El usuario ya ha iniciado sesión!',
-                tipo:1
-            }
-        });*/
     }else{
         const validaPassword = matchPassword(body.txtContrasena,row[0][0].CONTRASENA);
         if(validaPassword){
@@ -151,7 +52,6 @@ const verificarLogin = async (req, res, next)=>{
                 [
                     0,
                     body.txtCorreo,
-                    0, 
                     0,  
                     1,
                     ip,
@@ -162,8 +62,7 @@ const verificarLogin = async (req, res, next)=>{
                     res.json({
                         valor:{
                             resultado : true,
-                            idUser: row[0][0].ID_USUARIO,
-                            idNivel: row[0][0].ID_NIVEL
+                            idUser: row[0][0].ID_USUARIO
                         }
                     }); 
                 }else{
@@ -180,7 +79,6 @@ const verificarLogin = async (req, res, next)=>{
                 0,
                 body.txtCorreo,
                 0,   
-                0,
                 4,
                 ip,
                 server
@@ -214,12 +112,11 @@ const verificarDocumento = async (req, res, next)=>{
     const ip =  req.ip;
     const server =  req.hostname;
 
-    const query = `CALL USP_UPD_INS_REGISTRO(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         body.tipoDocumento,
         body.numeroDocumento,
-        0,
         0,
         11,
         ip,
@@ -250,12 +147,11 @@ const verificaLogeo = async (req, res, next)=>{
     const ip =  req.ip;
     const server =  req.hostname;
  
-    const query = `CALL USP_UPD_INS_REGISTRO(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         0,
         body.txtCorreo,
-        0,
         0,
         2,
         ip,
@@ -269,14 +165,6 @@ const verificaLogeo = async (req, res, next)=>{
                 mensaje : '¡El usuario o la contraseña es incorrecto!'
             }
         }); 
-    /*}else if(row[0].SESION=='A'){
-        res.json({
-            valor:{
-                resultado : false,
-                mensaje : '¡El usuario ya ha iniciado sesión!',
-                tipo:1
-            }
-        });*/
     }else{
         const validaPassword = matchPassword(body.txtContrasena,row[0][0].CONTRASENA);
         if(validaPassword){
@@ -287,7 +175,6 @@ const verificaLogeo = async (req, res, next)=>{
                 0,
                 body.txtCorreo,
                 0,   
-                0,
                 4,
                 ip,
                 server
@@ -304,12 +191,11 @@ const verificaLogeo = async (req, res, next)=>{
 }
 
 const verificarCorreo = async (req, res, next)=>{
-    const query = `CALL USP_UPD_INS_REGISTRO(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         0,
         req.body.correo,
-        0,
         0,
         9,
         0,
@@ -362,90 +248,6 @@ const caracter = (req, res, next)=>{
 
 }
 
-const verificaAdjunto = (req, res, next)=>{
-    var doc=0;
-    var mensajeAdjunto='';
-    req.archivo=0; 
-    if(req.files==null){
-        doc=1;
-    }else{
-        if(typeof req.files.imagen=== 'object'){
-            uploadedFile = req.files.imagen;
-            let extension = uploadedFile.name.split('.').pop();
-            let tamanio = uploadedFile.size;
-
-            if(config.TAMANO_ADJUNTO<tamanio){
-                mensajeAdjunto='¡El documento no debe ser mayor a 1MB!, ';
-            }else if(!config.FORMATOS_IMAGEN.includes(extension)){
-                mensajeAdjunto='¡El documento debe tener formato: jpg, jpeg, png!, ';
-            }else{
-                doc=1;
-                req.archivo=1;
-            }
-        }
-    }
-
-    if(doc>=1){
-        return next(); 
-    }else{
-        res.json({
-            valor:{
-                resultado : false,
-                mensaje : mensajeAdjunto
-            }
-        });
-    }
- 
-}
-
-const upload = (req, res, next)=>{
-    var uploadedFile;
-    var ruta;
-    var imagen=0;
-    var pdf=0;
-    if(req.files==null){
-        req.archivo=0; 
-        imagen=1;
-        pdf=1;
-    }else{
-        if(typeof req.files.imagenMarca=== 'object'){
-            uploadedFile = req.files.imagenMarca;
-
-            ruta='../public/documentos/cliente/DOC_'+req.body.idUsuario+"_"+uploadedFile.name;
-            req.archivo="DOC_"+req.body.idUsuario+"_"+uploadedFile.name;
-            uploadedFile.mv(path.join(__dirname,ruta));
-        }else{
-            req.archivo=0;
-        }
-        
-        if(typeof req.files.pdfIndecopi=== 'object'){
-            uploadedFile2 = req.files.pdfIndecopi;
-
-            ruta2='../public/documentos/marca/IND_'+req.body.idMarca+"_"+uploadedFile2.name;
-            req.archivo2="IND_"+req.body.idMarca+"_"+uploadedFile2.name;
-            uploadedFile2.mv(path.join(__dirname,ruta2));
-        }else{
-            req.archivo2=0;
-        }
-
-        imagen=1;
-        pdf=1;
-    }
-
-    if(imagen+pdf>=1){
-        return next(); 
-    }else{
-        res.json({
-            valor:{
-                resultado : false,
-                mensaje : 'Hubo un problema al subir los archivos'
-            }
-        });
-    }
- 
-}
-
-
 const validaSchema=  (schema)=>{
     return async (req, res, next)=>{
         try {
@@ -468,37 +270,6 @@ const validaSchema=  (schema)=>{
     }
 }
 
-const privilegios2 = async (idSubMenu,sesId)=>{
-    const query2 = `CALL USP_SEL_VERLISTAIDMENU(?, ?, ?, ?)`;
-    const row2 = await pool.query(query2,
-    [
-        idSubMenu,
-        'opcionNivel',
-        0,
-        sesId
-    ]);
-
-    var arr_botones=[];
-    for(var i=0;i<row2[0].length;i++){
-        arr_botones.push(row2[0][i].nomb_opci);
-    }
-    
-    return data={ 
-        botones : arr_botones
-    };
-    
-}
-
-const eliminaDocumentos = (ruta)=>{
-    
-    if(fs.existsSync(ruta)){
-        fs.unlink(ruta, function (err) {
-            if (err){
-                console.log(err);
-            } 
-        });
-    }    
-}
 
 const passwordAleatorio = async ()=>{
     let aleatorio=[];
@@ -530,17 +301,11 @@ const passwordAleatorio = async ()=>{
 module.exports = {
     isLogin,
     notLogin,
-    //sesion,
     verificarLogin,
     verificaLogeo,
     verificarCorreo,
-    verificaAdjunto,
-    upload,
     caracter,
     validaSchema,
-    privilegios2,
-    eliminaDocumentos,
     verificarDocumento,
-    passwordAleatorio,
-    iniciaCaja
+    passwordAleatorio
 }

@@ -47,30 +47,6 @@ router.post('/inicio/verificaLoginOk', notLogin, caracter, validaSchema(schemaLo
     }
 );
 
-router.post('/inicio/menuNivel', isLogin, async (req, res)=>{
-    const sesId=req.session.passport.user.id
-    try {
-        const menuNivel= await axios.get(config.URL_SISTEMA+"/api/inicio/menu/"+sesId+"/"+req.body.tabla+"/"+req.body.tabla2,{ 
-        headers: 
-        { 
-            authorization: `Bearer ${req.body.token}`
-        } 
-        });
-        res.json({
-            valor : menuNivel.data.valor
-        });
-    }catch (err) {
-        res.status(400).json({
-            error : {
-                message:err.response.data.error.message,
-                errno: err.response.data.error.errno,
-                code :err.response.data.error.code
-            }
-        });
-    }
-    
-});
-
 router.post('/inicio/register', notLogin, validaSchema(schemaRegister), async(req, res) => {
     try {
         const register = await axios.post(config.URL_SISTEMA+"/api/inicio/register",req.body);
@@ -124,23 +100,6 @@ router.post('/inicio/recupera', notLogin, validaSchema(schemaRecupera), verifica
     }
 });
 
-
-router.post('/vista/inicio/submenu', isLogin,  async (req, res) => {
-    const sesId=req.session.passport.user.id;
-    const idSubMenu=req.body.idSubMenu;
-    const tabla=req.body.tabla;
-    
-    const lista = await axios.get(config.URL_SISTEMA+"/api/"+tabla+"/listar/0/"+sesId,{ 
-        headers:{authorization: `Bearer ${req.body.token}`} 
-    });
-    
-    res.render(path.join(__dirname,"../views/"+tabla+"/"+tabla),{
-        tabla: tabla,
-        idSubMenu: idSubMenu,
-        lista: lista.data.valor.info,
-    });
-    
-});
 /*=============================================*/
 
 module.exports = router;
