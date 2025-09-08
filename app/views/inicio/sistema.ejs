@@ -1,0 +1,72 @@
+<!-- Loader -->
+<div id="global-loader">
+    <div class="spinner-border text-white" role="status"></div>
+</div>
+<!-- /Loader -->
+<!-- Page -->
+<div class="page custom-index">
+    <input type="hidden" id="userSesion" value="<%= user.id%>">
+    <input type="hidden" id="userNivel" value="">
+    <input type="hidden" id="userSucursal" value="">
+    <div>
+        <!-- main-header -->
+        <div class="main-header side-header sticky nav nav-item">
+            <div class="container-fluid main-container ">
+                <div class="main-header-left cursor">
+                    <i onclick="vistaMenuSubMenu({ruta:'reserva'.toLowerCase(),idSubMenu:88});" class="las la-calendar-alt la-3x"></i><strong>Calendario</strong>
+                </div>
+                <div class="main-header-right">
+                    <button class="navbar-toggler navresponsive-toggler d-lg-none ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent-4" aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon fe fe-more-vertical "></span>
+                    </button>
+                    <div class="mb-0 navbar navbar-expand-lg navbar-nav-right responsive-navbar navbar-dark p-0">
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+                            <ul class="nav nav-item  navbar-nav-right ms-auto">
+                                <li class="dropdown main-profile-menu nav nav-item nav-link">
+                                    <a class="main-img-user" href=""><img class='imagenUsuarioInicio' alt="" src="/imagenes/vacio.jpg"></a>
+                                    <div class="dropdown-menu">
+                                        <div class="main-header-profile bg-primary p-3">
+                                            <div class="d-flex wd-100p">
+                                                <div class="main-img-user"><img class='imagenUsuarioInicio' alt="" src="/imagenes/vacio.jpg" class=""></div>
+                                                <div class="ms-3 my-auto">
+                                                    <h6 id="usuarioMenu2"></h6><span id="nivelMenu2"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a id="miPerfil" class="dropdown-item" href="#" ><i class='bx bx-id-card'></i> Mi perfil</a>
+                                        <a id="cambiaPassword" class="dropdown-item" href="#"><i class="bx bx-slider-alt"></i> Cambiar contraseña</a>
+                                        <a id="salir" class="dropdown-item" href="#" ><i class="bx bx-log-out"></i> Salir</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /main-header -->
+    </div>
+
+    <!-- main-content -->
+    <div class="main-content app-content">
+
+        <!-- container -->
+        <div id="cuerpoPrincipal" class="main-container container-fluid">
+
+        </div>
+        <!-- /Container -->
+    </div>
+    <!-- /main-content -->
+
+
+
+    <!-- Footer opened -->
+    <div class="main-footer">
+        <div class="container-fluid pd-t-0 ht-100p">
+            <span> Copyright ©2023 <a href="https://aynisystem.com" class="text-primary">AyniSystem</a>. <span class="fa fa-heart text-danger"></span> Todos los derechos reservados.</span>
+        </div>
+    </div>
+    <!-- Footer closed -->
+
+</div>
+<!-- End Page -->

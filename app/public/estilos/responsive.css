@@ -1,0 +1,56 @@
+/*// Small devices (landscape phones, 576px and up)*/
+/*
+max : <-
+min : ->
+*/
+@media (max-width: 640px) {
+
+}
+
+@media (max-width: 300px) {
+    
+}
+@media (max-width: 340px) {
+    
+}
+
+/*puntos de quiebre personalizado*/
+@media (max-width: 768px) {
+    
+}
+
+/*---------------------------------------------------------------------------*/
+
+/*puntos de quiebre bootstrap*/
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 95% !important;
+    }
+}
+
+@media (min-width: 576px) {
+    .modal-dialog {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 95% !important;
+    }
+}
+
+
+@media (min-width: 768px) {
+    
+}
+
+
+@media (min-width: 992px){
+    
+}
+
+
+@media (min-width: 1200px) {
+    
+}
+
+/*------------------------------------*/    
