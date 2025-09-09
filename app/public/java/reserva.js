@@ -130,8 +130,17 @@ async function formularioCalendario(objeto){
 function activarCalendario(objeto){
 	var calendarEl = document.getElementById('calendar');
 	var calendar = new FullCalendar.Calendar(calendarEl, {
+		height: 'auto',
+		windowResizeDelay: 100,
 		locale: 'es',
 		timezone: 'America/Lima',
+		windowResize: function(arg) {
+			if (window.innerWidth < 768) {
+				calendar.changeView('listWeek');
+			} else {
+				calendar.changeView('dayGridMonth');
+			}
+		},
 		headerToolbar: {
 			left: 'prev,next,today',
 			center: 'title',
