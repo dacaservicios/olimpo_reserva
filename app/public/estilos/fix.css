@@ -30,6 +30,13 @@ body,.ui-autocomplete{
     margin-inline-start: 0 !important;
 }
 
+.responsive-navbar.navbar .navbar-collapse{
+    display: flex !important;
+    position: relative !important;
+    top:0 !important;
+
+}
+
 .side-header{
 padding-left: unset !important;
 }
@@ -85,8 +92,6 @@ form .card-header{
     padding-top: 5px;
     padding-bottom: 5px;
 }
-
-
 
 form label{
     font-size: 0.7rem !important;
