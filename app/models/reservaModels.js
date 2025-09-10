@@ -4,13 +4,14 @@ const config = require('../config/config');
 const axios = require('axios');
 
 const crearReserva = async (body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
     const row= await pool.query(query,
     [
         0,
         body.cliente,
         body.empleado,
-        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm:ss'),
+        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm'),
+        (body.comentario=='')?null:body.comentario,
         'crea',
         body.sesId
     ]);
@@ -45,13 +46,14 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 const editarReserva = async (id,body)=>{
 
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,
         body.cliente,
         body.empleado,
-        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm:ss'),
+        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm'),
+        (body.comentario=='')?null:body.comentario,
         'edita',
         body.sesId
     ]);
@@ -91,7 +93,7 @@ const editarReservaDD = async (id,body)=>{
         id,
         0,
         0,
-        moment(body.fecha).format('YYYY-MM-DD HH:mm:ss'),
+        moment(body.fecha).format('YYYY-MM-DD HH:mm:00.0000'),
         0,
         'editaDD',
         body.sesId
