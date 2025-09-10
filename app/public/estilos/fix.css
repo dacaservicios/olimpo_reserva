@@ -11,6 +11,9 @@ body,.ui-autocomplete{
     font-family: fuenteRandom;
 }
 
+#cuerpoPrincipal{
+   padding: unset; 
+}
 .cursor{
     cursor: pointer;
 }
@@ -29,7 +32,6 @@ body,.ui-autocomplete{
 
 .side-header{
 padding-left: unset !important;
-height: 40px !important;
 }
 
 .container, .container-fluid {
