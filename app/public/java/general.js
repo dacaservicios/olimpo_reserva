@@ -125,18 +125,18 @@ async function datosUsuario(){
         if(resp.resultado){
             $("#userNivel").val(resp.info.ID_NIVEL);
             $("#userSucursal").val(resp.info.ID_SUCURSAL);
-            $("span#nivelMenu, span#nivelMenu2").text(resp.info.NOMB_NIVEL);
+            //$("span#nivelMenu, span#nivelMenu2").text(resp.info.NOMB_NIVEL);
             $("h4#usuarioMenu,h6#usuarioMenu2").html(resp.info.NOMBRE+" "+resp.info.APELLIDO_PATERNO);
             
-            if(resp.info.IMAGEN=='null' || resp.info.IMAGEN===null){
+            /*if(resp.info.IMAGEN=='null' || resp.info.IMAGEN===null){
                 $("img.imagenUsuarioInicio").attr('src','/imagenes/vacio.jpg');
             }else{
                 $("img.imagenUsuarioInicio").attr('src','/imagenes/usuario/USU_'+resp.info.ID_USUARIO+'_'+resp.info.IMAGEN); 
-            }
+            }*/
 
-            $("#sucursalVentas").text(resp.info.NOMB_SUCURSAL);
+            //$("#sucursalVentas").text(resp.info.NOMB_SUCURSAL);
             
-            socket.emit('joinUsuario',{
+            /*socket.emit('joinUsuario',{
                 usuario : "U"+$("#userSesion").val()
             });
 
@@ -146,7 +146,7 @@ async function datosUsuario(){
 
             socket.emit('joinSucursal',{
                 sucursal: 'S'+$('#userSucursal').val()
-            });
+            });*/
         }else{
             mensajeSistema(resp.info.mensaje);
         }
