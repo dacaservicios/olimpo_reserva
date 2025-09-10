@@ -10,7 +10,7 @@ const crearReserva = async (body)=>{
         0,
         body.cliente,
         body.empleado,
-        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm'),
+        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm:ss'),
         'crea',
         body.sesId
     ]);
@@ -51,7 +51,7 @@ const editarReserva = async (id,body)=>{
         id,
         body.cliente,
         body.empleado,
-        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm'),
+        moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm:ss'),
         'edita',
         body.sesId
     ]);
@@ -91,7 +91,7 @@ const editarReservaDD = async (id,body)=>{
         id,
         0,
         0,
-        moment(body.fecha).format('YYYY-MM-DD HH:mm:00.0000'),
+        moment(body.fecha).format('YYYY-MM-DD HH:mm:ss'),
         0,
         'editaDD',
         body.sesId
