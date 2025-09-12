@@ -26,7 +26,7 @@ async function vistaReserva(){
 												<div class="col-md-12">
 													<div id='calendar'></div>
 												</div>
-												<a href="https://wa.me/51963754038?text=Hola%20necesito%20más%20comunicarme" 
+												<a href="https://wa.me/51963754038?text=Hola%20👋%0Aquisiera%20hacer%20una%20consulta%20📩😊" 
 													class="whatsapp-float" 
 													target="_blank">
 													<i class="lab la-whatsapp"></i>
