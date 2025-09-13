@@ -60,21 +60,28 @@ async function formularioCalendario(objeto){
 		} 
 	});
 
+	const servicio = await axios.get("/api/serviciosucursal/listar/0/"+verSesion(),{ 
+		headers:{
+			authorization: `Bearer ${verToken()}`
+		} 
+	});
+
 	desbloquea();
 	const resp=cliente.data.valor.info;
 	const resp2=empleado.data.valor.info;
+	const resp3=servicio.data.valor.info;
 	let listado=`<form id="${objeto.tabla}">
 					<span class='oculto muestraId'>0</span>
 					<span class='oculto muestraNombre'></span>
 					<div class="row pt-3">
-						<div class="form-group col-md-4">
+						<div class="form-group col-md-6">
 							<label>Cliente (*)</label>
 							<select name="cliente" class="form-control select2 muestraMensaje">
 								<option value="${resp.ID_CLIENTE}">${resp.APELLIDO_PATERNO+" "+resp.APELLIDO_MATERNO+" "+resp.NOMBRE}</option>			
 							</select>
 							<div class="vacio oculto">¡Campo obligatorio!</div>
 						</div>
-						<div class="form-group col-md-4">
+						<div class="form-group col-md-6">
 							<label>Colaborador (*)</label>
 							<select name="empleado" class="form-control select2">
 								<option value="">Select...</option>`;
@@ -86,7 +93,21 @@ async function formularioCalendario(objeto){
 					listado+=`</select>
 							<div class="vacio oculto">¡Campo obligatorio!</div>
 						</div>
-						<div class="form-group col-md-4">
+					</div>
+					<div class="row">
+						<div class="form-group col-md-6">
+							<label>Servicio (*)</label>
+							<select name="servicio" class="form-control select2">
+								<option value="">Select...</option>`;
+								for(var i=0;i<resp3.length;i++){
+									if(resp3[i].ES_VIGENTE==1){
+								listado+=`<option value="${resp3[i].ID_SERVICIO_SUCURSAL}">${resp3[i].NOMBRE+((resp3[i].DESCRIPCION===null)?'':" - "+resp3[i].DESCRIPCION)}</option>`;
+									}
+								}
+					listado+=`</select>
+							<div class="vacio oculto">¡Campo obligatorio!</div>
+						</div>
+						<div class="form-group col-md-6">
 							<label>Hora reserva (*)</label>
 							<input name="horaReserva" maxlength="5" autocomplete="off" type="time" class="form-control" placeholder="Ingrese la hora">
 							<input value="" id="fechaReserva" name="fechaReserva" maxlength="10" type="hidden">
@@ -125,6 +146,7 @@ async function formularioCalendario(objeto){
 		
 			objeto.cliente=$('#'+objeto.tabla+' select[name=cliente]');
 			objeto.empleado=$('#'+objeto.tabla+' select[name=empleado]');
+			objeto.servicio=$('#'+objeto.tabla+' select[name=servicio]');
 			objeto.fechaReserva=$('#'+objeto.tabla+' input[name=fechaReserva]');
 			objeto.horaReserva=$('#'+objeto.tabla+' input[name=horaReserva]');
 			objeto.comentario=$('#'+objeto.tabla+' input[name=comentario]');
@@ -212,6 +234,7 @@ function activarCalendario(objeto){
 						clientePaterno: event.PATERNO_CLIENTE,
 						clienteMaterno: event.MATERNO_CLIENTE,
 						clienteNombres: event.NOMBRE_CLIENTE,
+						servicioReserva: event.NOMBRE+((event.DESCRIPCION===null)?'':" - "+event.DESCRIPCION),
 						color:event.COLOR
 					}
 				}
@@ -241,6 +264,7 @@ function activarCalendario(objeto){
 			let newElClienteNombres = mouseEnterInfo.event.extendedProps.clienteNombres;
 			let newElBarberApellido = mouseEnterInfo.event.extendedProps.barberoPaterno+" "+mouseEnterInfo.event.extendedProps.barberoMaterno;
 			let newElBarberNombres = mouseEnterInfo.event.extendedProps.barberoNombres;
+			let newElServicioReserva = mouseEnterInfo.event.extendedProps.servicioReserva
 
 			//newEl.innerHTML = `
 			let tooltipContent = `
@@ -248,6 +272,7 @@ function activarCalendario(objeto){
                     <div><strong>${newElTitulo}: ${newElHora}</strong></div>
 					<div><strong>Cliente:</strong> ${newElClienteApellido+" "+newElClienteNombres}</div>
 					<div><strong>Colaborador:</strong> ${newElBarberApellido+" "+newElBarberNombres}</div>
+					<div><strong>Servicio:</strong> ${newElServicioReserva}</div>
 					<div><strong>Comentario:</strong> ${newElComentario}</div>
                 </div>`
 
@@ -361,6 +386,7 @@ async function reservaEdita(objeto){
 	const resp=busca.data.valor.info;
 	objeto.cliente.val(resp.ID_CLIENTE).trigger('change.select2');
 	objeto.empleado.val(resp.ID_EMPLEADO).trigger('change.select2');
+	objeto.servicio.val(resp.ID_SERVICIO_SUCURSAL).trigger('change.select2');
 	objeto.comentario.val(resp.COMENTARIO);
 	objeto.fechaReserva.val(moment(resp.FECHA_RESERVA).format('DD-MM-YYYY'));
 	objeto.horaReserva.val(moment(resp.FECHA_RESERVA).format('HH:mm'));
@@ -370,8 +396,9 @@ function validaFormularioReserva(objeto){
 	validaVacio(objeto.horaReserva);
 	validaVacioSelect(objeto.cliente);
 	validaVacioSelect(objeto.empleado);
+	validaVacioSelect(objeto.servicio);
 
-	if(objeto.horaReserva.val()=="" || objeto.cliente.val()=="" || objeto.empleado.val()==""){
+	if(objeto.horaReserva.val()=="" || objeto.cliente.val()=="" || objeto.empleado.val()=="" || objeto.servicio.val()==""){
 		return false;
 	}else{
 		enviaFormularioReserva(objeto);

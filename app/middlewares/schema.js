@@ -200,6 +200,7 @@ const schemaReserva=joi.object({
     id:joi.number().allow(''),
     cliente: joi.number().required(),
     empleado: joi.number().required(),
+    servicio: joi.number().required(),
     fechaReserva: joi.string().min(10).max(10).required(),
     horaReserva: joi.string().min(5).max(5).required(),
     comentario: joi.string().min(0).max(250).allow(''),

@@ -4,12 +4,13 @@ const config = require('../config/config');
 const axios = require('axios');
 
 const crearReserva = async (body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?)`;
     const row= await pool.query(query,
     [
         0,
         body.cliente,
         body.empleado,
+        body.servicio,
         moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm'),
         (body.comentario=='')?null:body.comentario,
         'crea',
@@ -25,6 +26,7 @@ const crearReserva = async (body)=>{
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
 
+💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
 📅 *Fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
@@ -46,12 +48,13 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 const editarReserva = async (id,body)=>{
 
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,
         body.cliente,
         body.empleado,
+        body.servicio,
         moment(body.fechaReserva+" "+body.horaReserva,'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm'),
         (body.comentario=='')?null:body.comentario,
         'edita',
@@ -67,6 +70,7 @@ const editarReserva = async (id,body)=>{
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
+💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
 📅 *Nueva fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Nueva hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
@@ -108,6 +112,7 @@ const editarReservaDD = async (id,body)=>{
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
+💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
 📅 *Nueva fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Nueva hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
@@ -178,6 +183,7 @@ const eliminarReserva = async(id,tabla)=>{
 ❌ ¡Hola, ${row[0][0].CLIENTE}!
 Hemos recibido tu solicitud de *cancelación de reserva*.
 
+💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
 📅 *Fecha cancelada:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
