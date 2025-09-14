@@ -220,6 +220,25 @@ const estadoReserva = async(id,tabla)=>{
     
 }
 
+const listarReservaDetalle = async(id, fecha,tabla,sesId)=>{
+    const query = `CALL USP_UPD_INS_DETALLE(?, ?, ?, ? ,?)`;
+    const row =  await pool.query(query,
+    [
+        id,
+        0,
+        moment(fecha,'DD-MM-YYYY').format('YYYY-MM-DD'),
+        tabla,
+        sesId
+    ]);
+
+    return { 
+        resultado : true,
+        info : row[0],
+        mensaje : '¡Exito!'
+    }; 
+    
+}
+
 module.exports = {
     crearReserva,
     editarReserva,
@@ -227,6 +246,7 @@ module.exports = {
     buscarReserva,
     listarReserva,
     estadoReserva,
-    eliminarReserva
+    eliminarReserva,
+    listarReservaDetalle
 }
 

@@ -109,7 +109,9 @@ async function formularioCalendario(objeto){
 						</div>
 						<div class="form-group col-md-6">
 							<label>Hora reserva (*)</label>
-							<input name="horaReserva" maxlength="5" autocomplete="off" type="time" class="form-control" placeholder="Ingrese la hora">
+							<select id="horaReserva" name="horaReserva" class="form-control select2">
+								<option value="">Select...</option>
+							</select>
 							<input value="" id="fechaReserva" name="fechaReserva" maxlength="10" type="hidden">
 							<div class="vacio oculto">¡Campo obligatorio!</div>
 						</div>
@@ -148,7 +150,7 @@ async function formularioCalendario(objeto){
 			objeto.empleado=$('#'+objeto.tabla+' select[name=empleado]');
 			objeto.servicio=$('#'+objeto.tabla+' select[name=servicio]');
 			objeto.fechaReserva=$('#'+objeto.tabla+' input[name=fechaReserva]');
-			objeto.horaReserva=$('#'+objeto.tabla+' input[name=horaReserva]');
+			objeto.horaReserva=$('#'+objeto.tabla+' select[name=horaReserva]');
 			objeto.comentario=$('#'+objeto.tabla+' input[name=comentario]');
 			
 			eventosReserva(objeto);
@@ -176,24 +178,28 @@ function activarCalendario(objeto){
 		initialView: 'dayGridMonth',
 		editable:true,
 		dateClick: async function(info){
-			objeto.fecha=info.dateStr;
-			await formularioCalendario(objeto);
-			$("#"+objeto.tabla+" span#botonGuardar").text('Crear');
-			$("#"+objeto.tabla+" button[name=btnLimpia]").removeClass('oculto');
-			$("#"+objeto.tabla+" button[name=btnQuitar]").addClass('oculto');
+			if(info.dateStr >= moment().format('YYYY-MM-DD')){
+				objeto.fecha=info.dateStr;
+				await formularioCalendario(objeto);
+				$("#"+objeto.tabla+" span#botonGuardar").text('Crear');
+				$("#"+objeto.tabla+" button[name=btnLimpia]").removeClass('oculto');
+				$("#"+objeto.tabla+" button[name=btnQuitar]").addClass('oculto');
+			}
 		},
 		eventClick: async function(info){
-			let id=info.event.id;
-			let nombre=info.event.extendedProps.clientePaterno+" "+info.event.extendedProps.clienteNombres;
-			objeto.id=id;
-			objeto.fecha=info.event.startStr
-			await formularioCalendario(objeto);
-			$("#"+objeto.tabla+" span.muestraId").text(id);
-			$("#"+objeto.tabla+" span.muestraNombre").text(nombre);
-			$("#"+objeto.tabla+" span#botonGuardar").text('Modificar');
-			$("#"+objeto.tabla+" button[name=btnLimpia]").addClass('oculto');
-			$("#"+objeto.tabla+" button[name=btnQuitar]").removeClass('oculto');
-			reservaEdita(objeto);
+			if(info.event.startStr >= moment().format('YYYY-MM-DD')){
+				let id=info.event.id;
+				let nombre=info.event.extendedProps.clientePaterno+" "+info.event.extendedProps.clienteNombres;
+				objeto.id=id;
+				objeto.fecha=info.event.startStr
+				await formularioCalendario(objeto);
+				$("#"+objeto.tabla+" span.muestraId").text(id);
+				$("#"+objeto.tabla+" span.muestraNombre").text(nombre);
+				$("#"+objeto.tabla+" span#botonGuardar").text('Modificar');
+				$("#"+objeto.tabla+" button[name=btnLimpia]").addClass('oculto');
+				$("#"+objeto.tabla+" button[name=btnQuitar]").removeClass('oculto');
+				reservaEdita(objeto);
+			}
 		},
 		eventDrop: function(info){
 			// Validar si ya existe una reserva en la nueva fecha
@@ -339,6 +345,11 @@ function eventosReserva(objeto){
     $('#'+objeto.tabla+' div').on( 'change','select',function(){
 		let name=$(this).attr('name');
 		let elemento=$("#"+objeto.tabla+" select[name="+name+"]");
+		if(name=='empleado'){
+			let fechaR=$("#fechaReserva").val();
+			let empleadoR=$("#"+objeto.tabla+" select[name="+name+"]").val();
+			verificaFechas({fecha:fechaR,empleado:empleadoR, tabla:objeto.tabla})
+		}
 		validaVacioSelect(elemento);
 	});
 
@@ -374,6 +385,38 @@ function eventosReserva(objeto){
 	});
 }
 
+async function verificaFechas(objeto){
+	bloquea();
+	const horas= await axios.get('/api/'+objeto.tabla+'/listar/hora/'+objeto.empleado+'/'+objeto.fecha+'/'+verSesion(),{ 
+		headers:{
+			authorization: `Bearer ${verToken()}`
+		}
+	});
+
+	const horario = await axios.get("/api/parametro/detalle/listar/62/"+verSesion(),{ 
+		headers:{
+			authorization: `Bearer ${verToken()}`
+		} 
+	});
+
+	const resp1=horas.data.valor.info;
+	const resp2=horario.data.valor.info;
+	let arrResp1=(resp1===undefined)?[]:resp1.map(r => r.HORA);
+
+	let listado=`<option value="">Select...</option>`;
+				for(var i=0;i<resp2.length;i++){
+					if(resp2[i].ES_VIGENTE==1){
+						let disabled=(arrResp1.includes(resp2[i].DESCRIPCIONDETALLE))?'disabled':'';
+
+				listado+=`<option ${disabled} value="${resp2[i].DESCRIPCIONDETALLE}">${resp2[i].DESCRIPCIONDETALLE}</option>`;
+					}
+				}
+	$('#horaReserva').html(listado);
+
+	desbloquea();
+	
+}
+
 async function reservaEdita(objeto){
 	quitaValidacionTodo(objeto.tabla)
 	bloquea();
@@ -382,14 +425,17 @@ async function reservaEdita(objeto){
 			authorization: `Bearer ${verToken()}`
 		}
 	});
-	desbloquea();
 	const resp=busca.data.valor.info;
+	await verificaFechas({fecha:moment(resp.FECHA_RESERVA).format('DD-MM-YYYY'),empleado:resp.ID_EMPLEADO, tabla:objeto.tabla})
+
+	desbloquea();
+	
 	objeto.cliente.val(resp.ID_CLIENTE).trigger('change.select2');
 	objeto.empleado.val(resp.ID_EMPLEADO).trigger('change.select2');
 	objeto.servicio.val(resp.ID_SERVICIO_SUCURSAL).trigger('change.select2');
 	objeto.comentario.val(resp.COMENTARIO);
 	objeto.fechaReserva.val(moment(resp.FECHA_RESERVA).format('DD-MM-YYYY'));
-	objeto.horaReserva.val(moment(resp.FECHA_RESERVA).format('HH:mm'));
+	objeto.horaReserva.val(moment(resp.FECHA_RESERVA).format('HH:mm')).trigger('change.select2');
 }
 
 function validaFormularioReserva(objeto){	
