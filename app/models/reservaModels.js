@@ -91,10 +91,11 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 }
 
 const editarReservaDD = async (id,body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,
+        0,
         0,
         0,
         moment(body.fecha).format('YYYY-MM-DD HH:mm:00.0000'),
