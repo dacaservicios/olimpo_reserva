@@ -27,6 +27,7 @@ const crearReserva = async (body)=>{
 Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
 
 💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
@@ -71,6 +72,7 @@ const editarReserva = async (id,body)=>{
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
 💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Nueva fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Nueva hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
@@ -114,6 +116,7 @@ const editarReservaDD = async (id,body)=>{
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
 💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Nueva fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Nueva hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
@@ -185,6 +188,7 @@ const eliminarReserva = async(id,tabla)=>{
 Hemos recibido tu solicitud de *cancelación de reserva*.
 
 💈 *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Fecha cancelada:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
