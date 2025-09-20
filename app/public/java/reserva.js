@@ -70,6 +70,9 @@ async function formularioCalendario(objeto){
 	const resp=cliente.data.valor.info;
 	const resp2=empleado.data.valor.info;
 	const resp3=servicio.data.valor.info;
+
+	let fecha=moment(objeto.fecha).isoWeekday();
+
 	let listado=`<form id="${objeto.tabla}">
 					<span class='oculto muestraId'>0</span>
 					<span class='oculto muestraNombre'></span>
@@ -87,7 +90,10 @@ async function formularioCalendario(objeto){
 								<option value="">Select...</option>`;
 								for(var i=0;i<resp2.length;i++){
 									if(resp2[i].ES_VIGENTE==1){
+										let arrDescanso=(resp2[i].ID_DESCANSO!==null)?resp2[i].ID_DESCANSO.split(",").map(Number):null; 
+										if(!arrDescanso.includes(fecha)){
 								listado+=`<option value="${resp2[i].ID_EMPLEADO}">${resp2[i].APELLIDO_PATERNO+" "+resp2[i].APELLIDO_MATERNO+" "+resp2[i].NOMBRE}</option>`;
+										}
 									}
 								}
 					listado+=`</select>
