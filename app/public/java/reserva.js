@@ -129,7 +129,7 @@ async function formularioCalendario(objeto){
 						</div>
 					</div>
 					<div class="pt-3 col-md-12 pl-0 pr-0 text-center">
-						${limpia()+cancela()+quitar()+guarda()}
+						${limpia()+quitar()+guarda()}
 					</div>
 					<div class="h8 text-center pt-2">(*) Los campos con asteriso son obligatorios.</div>
 				</form>`;
