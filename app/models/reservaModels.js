@@ -21,7 +21,7 @@ const crearReserva = async (body)=>{
     moment.locale('es');
 
     let body2={
-            phone:'51992691213',//+row[0][0].CEL_CLIENTE,
+            phone:row[0][0].CEL_CLIENTE,
             message:`
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
@@ -35,7 +35,7 @@ Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
 Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 ¡Gracias por elegirnos! 🙌`.trim(),
-            sender: '51963754038'//row[0][0].NRO_WHATSAPP,
+            sender: row[0][0].NRO_WHATSAPP,
         }
 
     await axios.post(config.URL_WHATSAPP,body2);
@@ -66,7 +66,7 @@ const editarReserva = async (id,body)=>{
     moment.locale('es');
 
     let body2={
-            phone:'51992691213',//+row[0][0].CEL_CLIENTE,
+            phone:row[0][0].CEL_CLIENTE,
             message:`
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
@@ -110,7 +110,7 @@ const editarReservaDD = async (id,body)=>{
     moment.locale('es');
 
     let body2={
-            phone:'51992691213',//+row[0][0].CEL_CLIENTE,
+            phone:row[0][0].CEL_CLIENTE,
             message:`
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
@@ -182,7 +182,7 @@ const eliminarReserva = async(id,tabla)=>{
     moment.locale('es');
 
     let body2={
-            phone:'51992691213',//+row[0][0].CEL_CLIENTE,
+            phone:row[0][0].CEL_CLIENTE,
             message:`
 ❌ ¡Hola, ${row[0][0].CLIENTE}!
 Hemos recibido tu solicitud de *cancelación de reserva*.
