@@ -17,7 +17,7 @@ const crearReserva = async (body)=>{
         body.sesId
     ]);
 
-    if((row[0][0].CEL_CLIENTE!==null || row[0][0].CEL_CLIENTE!='') &&  row[0][0].NRO_WHATSAPP!==null){
+    if(row[0][0].CEL_CLIENTE &&  row[0][0].NRO_WHATSAPP){
     moment.locale('es');
 
     let body2={
@@ -38,8 +38,27 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
             sender: row[0][0].NRO_WHATSAPP,
         }
 
-    await axios.post(config.URL_WHATSAPP,body2);
+        await axios.post(config.URL_WHATSAPP,body2);
     }
+
+    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
+        let body3={
+            phone:'51'+row[0][0].CELULAR_EMPLEADO,
+            message:`
+💈🧔‍♂️ *Nueva cita agendada*
+
+👤 *Cliente:* ${row[0][0].CLIENTE}
+✂️ *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+
+📅 ${moment(row[0][0].FECHA_RESERVA).format('DD/MM/YYYY')}
+🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+
+🔥 ¡Prepárate para el próximo corte!`.trim(),
+            sender: row[0][0].NRO_WHATSAPP,
+        }
+        await axios.post(config.URL_WHATSAPP,body3);
+    }
+
     return { 
         resultado : true,
         info : row[0][0],
@@ -62,7 +81,7 @@ const editarReserva = async (id,body)=>{
         body.sesId
     ]);
 
-    if((row[0][0].CEL_CLIENTE!==null || row[0][0].CEL_CLIENTE!='') &&  row[0][0].NRO_WHATSAPP!==null){
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
     moment.locale('es');
 
     let body2={
@@ -82,6 +101,24 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
         }
 
     await axios.post(config.URL_WHATSAPP,body2);
+    }
+
+    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
+        let body3={
+            phone:'51'+row[0][0].CELULAR_EMPLEADO,
+            message:`
+✏️💈 *Cita modificada*
+
+👤 *Cliente:* ${row[0][0].CLIENTE}
+✂️ *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+
+📅 ${moment(row[0][0].FECHA_RESERVA).format('DD/MM/YYYY')}
+🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+
+⚠️ Revisa el cambio en tu agenda.`.trim(),
+            sender: row[0][0].NRO_WHATSAPP,
+        }
+        await axios.post(config.URL_WHATSAPP,body3);
     }
 
     return { 
@@ -106,7 +143,7 @@ const editarReservaDD = async (id,body)=>{
         body.sesId
     ]);
 
-    if((row[0][0].CEL_CLIENTE!==null || row[0][0].CEL_CLIENTE!='') &&  row[0][0].NRO_WHATSAPP!==null){
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
     moment.locale('es');
 
     let body2={
@@ -127,6 +164,25 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 
     await axios.post(config.URL_WHATSAPP,body2);
     }
+
+    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
+        let body3={
+            phone:'51'+row[0][0].CELULAR_EMPLEADO,
+            message:`
+✏️💈 *Cita modificada*
+
+👤 *Cliente:* ${row[0][0].CLIENTE}
+✂️ *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+
+📅 ${moment(row[0][0].FECHA_RESERVA).format('DD/MM/YYYY')}
+🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+
+⚠️ Revisa el cambio en tu agenda.`.trim(),
+            sender: row[0][0].NRO_WHATSAPP,
+        }
+        await axios.post(config.URL_WHATSAPP,body3);
+    }
+
 
     return { 
         resultado : true,
@@ -178,7 +234,7 @@ const eliminarReserva = async(id,tabla)=>{
         tabla
     ]);
 
-    if((row[0][0].CEL_CLIENTE!==null || row[0][0].CEL_CLIENTE!='') &&  row[0][0].NRO_WHATSAPP!==null){
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
     moment.locale('es');
 
     let body2={
@@ -199,6 +255,24 @@ Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
         }
 
     await axios.post(config.URL_WHATSAPP,body2);
+    }
+
+    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
+        let body3={
+            phone:'51'+row[0][0].CELULAR_EMPLEADO,
+            message:`
+❌💈 *Cita cancelada*
+
+👤 *Cliente:* ${row[0][0].CLIENTE}
+✂️ *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+
+📅 ${moment(row[0][0].FECHA_RESERVA).format('DD/MM/YYYY')}
+🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+
+📌 Este espacio ha quedado disponible.`.trim(),
+            sender: row[0][0].NRO_WHATSAPP,
+        }
+        await axios.post(config.URL_WHATSAPP,body3);
     }
 
     return { 
