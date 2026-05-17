@@ -9,8 +9,9 @@ let _calEvents   = [];
 let _calTabla    = 'reserva';
 
 // ── Estado del wizard ──
-let _wiz     = {};
-let _wizData = { servicios: [], barberos: [], clientes: [] };
+let _wiz      = {};
+let _wizData  = { tipos: [], servicios: [], barberos: [], clientes: [] };
+let _wizCalDate = moment();
 
 // ── Detalle/edición de reserva ──
 let _resDetalle = null;
@@ -28,33 +29,26 @@ $(document).ready(function () {
 //  VISTA PRINCIPAL — CALENDARIO
 // ═══════════════════════════════════════════
 async function vistaReserva() {
-	_calTabla = 'reserva';
+	_calTabla    = 'reserva';
+	_calDate     = moment();
+	_calSelected = moment();
+	const today = moment().format('YYYY-MM-DD');
+
+	const dow  = moment().locale('es').format('dddd');
+	const num  = moment().format('D');
+	const mes  = moment().locale('es').format('MMMM YYYY');
 
 	const html = `
 	<div class="md-cal-app">
-
-		<!-- Cabecera mes -->
-		<div class="md-cal-header">
-			<button class="android-icon-btn" id="calPrev"><i class="las la-angle-left"></i></button>
-			<div style="text-align:center">
-				<div class="md-cal-month-lbl" id="calMonthLbl"></div>
-				<div class="md-cal-year-lbl"  id="calYearLbl"></div>
-			</div>
-			<button class="android-icon-btn" id="calNext"><i class="las la-angle-right"></i></button>
-		</div>
-
-		<!-- Strip horizontal de días -->
-		<div class="md-strip-wrap">
-			<div class="md-day-strip" id="calDayStrip"></div>
-		</div>
-
-		<!-- Sección de tarjetas -->
-		<div class="md-cal-section-header">
-			<div class="md-cal-section-icon"><i class="las la-calendar-check"></i></div>
-			<span id="calDayTitle">Selecciona un día</span>
+		<div class="md-today-header">
+			<div class="md-today-dow">${dow.charAt(0).toUpperCase() + dow.slice(1)}</div>
+			<div class="md-today-num">${num}</div>
+			<div class="md-today-mes">${mes.charAt(0).toUpperCase() + mes.slice(1)}</div>
 		</div>
 		<div id="calCards"></div>
-
+		<button class="md-nueva-reserva-btn" onclick="nuevaReservaFecha('${today}')">
+			<i class="las la-calendar-plus"></i> Nueva Reserva
+		</button>
 	</div>
 	<a href="https://wa.me/51963754038?text=Hola%20👋%0Aquisiera%20hacer%20una%20consulta%20📩😊"
 		class="whatsapp-float" target="_blank">
@@ -62,13 +56,8 @@ async function vistaReserva() {
 	</a>`;
 
 	$('#cuerpoPrincipal').html(html);
-
-	$(document).off('click', '#calPrev, #calNext')
-		.on('click', '#calPrev', () => { _calDate.subtract(1, 'month'); _renderCalendar(); })
-		.on('click', '#calNext', () => { _calDate.add(1, 'month');      _renderCalendar(); });
-
 	await _cargarEventos();
-	_renderCalendar();
+	_renderCards(today, false);
 }
 
 async function _cargarEventos() {
@@ -154,7 +143,7 @@ function _renderCalendar() {
 	}
 }
 
-function _renderCards(dateStr) {
+function _renderCards(dateStr, showAddBtn = true) {
 	const dayEvts = _calEvents.filter(e =>
 		moment(e.FECHA_RESERVA).format('YYYY-MM-DD') === dateStr
 	).sort((a, b) =>
@@ -172,7 +161,7 @@ function _renderCards(dateStr) {
 			<div class="md-cal-empty">
 				<i class="las la-calendar-times"></i>
 				<p>Sin reservas este día</p>
-				${!isPast ? `<button class="btn btn-primary mt-3" onclick="nuevaReservaFecha('${dateStr}')">
+				${!isPast && showAddBtn ? `<button class="btn btn-primary mt-3" onclick="nuevaReservaFecha('${dateStr}')">
 					<i class="las la-plus"></i> Nueva reserva
 				</button>` : ''}
 			</div>`);
@@ -205,7 +194,7 @@ function _renderCards(dateStr) {
 		</div>`;
 	}).join('');
 
-	if (!isPast) {
+	if (!isPast && showAddBtn) {
 		html += `<button class="md-add-btn" onclick="nuevaReservaFecha('${dateStr}')">
 			<i class="las la-plus"></i> Agregar reserva
 		</button>`;
@@ -226,7 +215,7 @@ function _renderCards(dateStr) {
 //  DETALLE DE RESERVA
 // ═══════════════════════════════════════════
 
-function verDetalleReserva(evt) {
+function verDetalleReserva(evt, soloLectura = false) {
 	const hora    = moment(evt.FECHA_RESERVA).format('HH:mm');
 	const fechaLb = moment(evt.FECHA_RESERVA).locale('es').format('D [de] MMMM YYYY');
 	const fechaStr = fechaLb.charAt(0).toUpperCase() + fechaLb.slice(1);
@@ -266,12 +255,23 @@ function verDetalleReserva(evt) {
 					<span class="res-detail-key"><i class="las la-clock"></i> Hora</span>
 					<span class="res-detail-val">${hora}</span>
 				</div>
-				<div class="res-detail-row last">
+				${evt.TIPO_CLIENTE ? `
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-user-tag"></i> Tipo</span>
+					<span class="res-detail-val">${evt.TIPO_CLIENTE}</span>
+				</div>` : ''}
+				<div class="res-detail-row${evt.COMENTARIO ? '' : ' last'}">
 					<span class="res-detail-key"><i class="las la-tag"></i> Estado</span>
 					<span class="res-detail-val">${estadoBadge}</span>
 				</div>
+				${evt.COMENTARIO ? `
+				<div class="res-detail-row last">
+					<span class="res-detail-key"><i class="las la-comment-alt"></i> Nota</span>
+					<span class="res-detail-val">${evt.COMENTARIO}</span>
+				</div>` : ''}
 			</div>
 
+			${!soloLectura ? `
 			<div class="res-detail-actions">
 				<button class="res-btn-edit" onclick="abrirEdicionReserva(${id})">
 					<i class="las la-pen"></i> Editar
@@ -279,7 +279,7 @@ function verDetalleReserva(evt) {
 				<button class="res-btn-cancel" onclick="_resCancelarActual()">
 					<i class="las la-times-circle"></i> Cancelar Cita
 				</button>
-			</div>
+			</div>` : ''}
 		</div>`
 	});
 }
@@ -303,6 +303,92 @@ function _resCancelarActual() {
 	if (!_resDetalle) return;
 	const nombre = `${_resDetalle.PATERNO_CLIENTE || ''} ${_resDetalle.NOMBRE_CLIENTE || ''}`.trim();
 	reservaElimina({ id: _resDetalle.ID_RESERVA, nombre, tabla: 'reserva' });
+}
+
+// ═══════════════════════════════════════════
+//  MIS CITAS — PANEL COMPLETO
+// ═══════════════════════════════════════════
+
+function abrirMisCitas() {
+	setNavActive('navMisCitas');
+	const oc = new bootstrap.Offcanvas(document.getElementById('offcanvasMisCitas'));
+	oc.show();
+
+	if (!_calEvents || _calEvents.length === 0) {
+		$('#misCitasBody').html(`<div class="md-cal-empty">
+			<i class="las la-calendar-times"></i>
+			<p>Sin citas registradas</p>
+		</div>`);
+		return;
+	}
+
+	const today = moment().format('YYYY-MM-DD');
+
+	const proximas = [..._calEvents]
+		.filter(e => moment(e.FECHA_RESERVA).format('YYYY-MM-DD') >= today)
+		.sort((a, b) => moment(a.FECHA_RESERVA).valueOf() - moment(b.FECHA_RESERVA).valueOf());
+
+	const pasadas = [..._calEvents]
+		.filter(e => moment(e.FECHA_RESERVA).format('YYYY-MM-DD') < today)
+		.sort((a, b) => moment(b.FECHA_RESERVA).valueOf() - moment(a.FECHA_RESERVA).valueOf());
+
+	const renderGroup = (eventos, isPast) => {
+		const groups = {};
+		eventos.forEach(e => {
+			const d = moment(e.FECHA_RESERVA).format('YYYY-MM-DD');
+			if (!groups[d]) groups[d] = [];
+			groups[d].push(e);
+		});
+		return Object.keys(groups).map(dateStr => {
+			const label = moment(dateStr).locale('es').format('ddd D [de] MMMM');
+			const labelCap = label.charAt(0).toUpperCase() + label.slice(1);
+			const cards = groups[dateStr].map(e => _misCitasCard(e, isPast)).join('');
+			return `<div class="md-citas-group-header${isPast ? ' past' : ''}">${labelCap}</div>${cards}`;
+		}).join('');
+	};
+
+	let html = '';
+	if (proximas.length > 0) {
+		html += `<div class="md-citas-section-title">Próximas</div>` + renderGroup(proximas, false);
+	}
+	if (pasadas.length > 0) {
+		html += `<div class="md-citas-section-title past">Anteriores</div>` + renderGroup(pasadas, true);
+	}
+
+	$('#misCitasBody').html(html);
+
+	$('#misCitasBody').off('click', '.md-res-card').on('click', '.md-res-card', function () {
+		const id      = $(this).data('id');
+		const isPast  = $(this).hasClass('past');
+		const evt     = _calEvents.find(e => e.ID_RESERVA == id);
+		if (!evt) return;
+		bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasMisCitas')).hide();
+		setTimeout(() => verDetalleReserva(evt, isPast), 350);
+	});
+}
+
+function _misCitasCard(e, isPast) {
+	const hora    = moment(e.FECHA_RESERVA).format('HH:mm');
+	const cliente = `${e.PATERNO_CLIENTE || ''} ${e.NOMBRE_CLIENTE || ''}`.trim();
+	const barbero  = e.NOMBRE_EMPLEADO || '';
+	const servicio = e.NOMBRE || '';
+	const color    = e.COLOR || 'var(--md-primary)';
+	const fg       = (typeof getContrastColor === 'function') ? getContrastColor(color) : '#fff';
+	return `
+	<div class="md-res-card${isPast ? ' past' : ''}" data-id="${e.ID_RESERVA}">
+		<div class="md-res-chip" style="background:${color};color:${fg}">
+			<span class="md-res-hora">${hora}</span>
+		</div>
+		<div class="md-res-info">
+			<div class="md-res-cliente">${cliente}</div>
+			<div class="md-res-meta">
+				<i class="las la-cut"></i> ${servicio}
+				&nbsp;·&nbsp;
+				<i class="las la-user"></i> ${barbero}
+			</div>
+		</div>
+		${!isPast ? '<i class="las la-pen md-res-edit"></i>' : ''}
+	</div>`;
 }
 
 // ═══════════════════════════════════════════
@@ -354,7 +440,8 @@ function _mostrarFormEdicion(res, id) {
 			data-empleado="${res.ID_EMPLEADO}"
 			data-cliente="${res.ID_CLIENTE}"
 			data-servicio="${res.ID_SERVICIO_SUCURSAL}"
-			data-hora="${moment(res.FECHA_RESERVA).format('HH:mm')}">
+			data-hora="${moment(res.FECHA_RESERVA).format('HH:mm')}"
+			data-tipocliente="${res.ID_TIPO_CLIENTE || 0}">
 
 			<div class="res-edit-section-lbl"><i class="las la-calendar-alt"></i> Fecha</div>
 			<div class="wiz-day-strip-wrap">
@@ -455,6 +542,7 @@ async function guardarCambiosReserva() {
 		fd.append('fechaReserva', moment(fecha).format('DD-MM-YYYY'));
 		fd.append('horaReserva',  hora);
 		fd.append('comentario',   coment || '');
+		fd.append('tipoCliente',  $form.data('tipocliente') || 0);
 		fd.append('sesId',        verSesion());
 
 		const r = await axios.put(`/api/reserva/editar/${id}`, fd, {
@@ -482,7 +570,7 @@ async function guardarCambiosReserva() {
 function _wizReset(fecha) {
 	_wiz = {
 		step: 1,
-		tipo: null,
+		tipo: null, tipoClienteId: null,
 		servicioId: null, servicioNombre: '', servicioDur: '',
 		barberoId: null, barberoNombre: '',
 		fecha: fecha || moment().format('YYYY-MM-DD'),
@@ -499,13 +587,16 @@ async function nuevaReservaFecha(dateStr) {
 	const diaSemana = moment(dateStr).isoWeekday();
 
 	try {
-		const [rServicio, rEmpleado, rCliente] = await Promise.all([
-			axios.get(`/api/serviciosucursal/listar/0/${verSesion()}`, { headers: { authorization: `Bearer ${verToken()}` } }),
-			axios.get(`/api/empleado/listar/0/${verSesion()}`,         { headers: { authorization: `Bearer ${verToken()}` } }),
-			axios.get(`/api/cliente/listar/0/${verSesion()}`,          { headers: { authorization: `Bearer ${verToken()}` } })
+		const [rServicio, rEmpleado, rCliente, rTipos] = await Promise.all([
+			axios.get(`/api/serviciosucursal/listar/0/${verSesion()}`,      { headers: { authorization: `Bearer ${verToken()}` } }),
+			axios.get(`/api/empleado/listar/0/${verSesion()}`,              { headers: { authorization: `Bearer ${verToken()}` } }),
+			axios.get(`/api/cliente/listar/0/${verSesion()}`,               { headers: { authorization: `Bearer ${verToken()}` } })
+				.catch(() => ({ data: { valor: { info: [] } } })),
+			axios.get(`/api/parametro/detalle/listar/64/${verSesion()}`,    { headers: { authorization: `Bearer ${verToken()}` } })
 				.catch(() => ({ data: { valor: { info: [] } } }))
 		]);
 
+		_wizData.tipos    = (rTipos.data.valor.info    || []).filter(t => t.ES_VIGENTE == 1);
 		_wizData.servicios = (rServicio.data.valor.info || []).filter(s => s.ES_VIGENTE == 1);
 		_wizData.barberos  = (rEmpleado.data.valor.info || []).filter(e => {
 			if (e.ES_VIGENTE != 1) return false;
@@ -581,24 +672,36 @@ function _wizRenderNav() {
 
 // ── Paso 1: Tipo de cliente ──
 function _wizStep1() {
+	const emojiMap = (desc) => {
+		const d = (desc || '').toLowerCase();
+		if (d.includes('menor') || d.includes('niño') || d.includes('junior')) return '👦';
+		if (d.includes('adulto') || d.includes('mayor')) return '🧔';
+		return '👤';
+	};
+
+	const cards = (_wizData.tipos.length
+		? _wizData.tipos
+		: [{ ID_PARAMETRO_DETALLE: 0, DESCRIPCIONDETALLE: 'Sin tipos configurados' }]
+	).map(t => {
+		const sel = t.ID_PARAMETRO_DETALLE == _wiz.tipoClienteId ? ' selected' : '';
+		return `<div class="wiz-tipo-card${sel}"
+			data-id="${t.ID_PARAMETRO_DETALLE}" data-nombre="${t.DESCRIPCIONDETALLE}">
+			<div class="wiz-tipo-emoji">${emojiMap(t.DESCRIPCIONDETALLE)}</div>
+			<div class="wiz-tipo-name">${t.DESCRIPCIONDETALLE}</div>
+		</div>`;
+	}).join('');
+
 	$('#wizContent').html(`
 		<div class="wiz-step-label">¿Para quién es la cita?</div>
 		<div class="wiz-step-sub">Selecciona el tipo de cliente</div>
-		<div class="wiz-tipo-grid">
-			<div class="wiz-tipo-card${_wiz.tipo === 'adulto' ? ' selected' : ''}" data-tipo="adulto">
-				<div class="wiz-tipo-emoji">🧔</div>
-				<div class="wiz-tipo-name">Adulto</div>
-			</div>
-			<div class="wiz-tipo-card${_wiz.tipo === 'menor' ? ' selected' : ''}" data-tipo="menor">
-				<div class="wiz-tipo-emoji">👦</div>
-				<div class="wiz-tipo-name">Menor</div>
-			</div>
-		</div>
+		<div class="wiz-tipo-grid">${cards}</div>
 	`);
+
 	$('#wizContent').off('click', '.wiz-tipo-card').on('click', '.wiz-tipo-card', function () {
 		$('.wiz-tipo-card').removeClass('selected');
 		$(this).addClass('selected');
-		_wiz.tipo = $(this).data('tipo');
+		_wiz.tipoClienteId = $(this).data('id');
+		_wiz.tipo          = $(this).data('nombre');
 	});
 }
 
@@ -661,38 +764,81 @@ function _wizStep3() {
 function _wizStep4() {
 	const today = moment();
 	const fm    = moment(_wiz.fecha);
-	if (fm.isBefore(today, 'day') || fm.diff(today, 'days') >= 14) {
-		_wiz.fecha = today.format('YYYY-MM-DD');
-	}
+	if (fm.isBefore(today, 'day')) _wiz.fecha = today.format('YYYY-MM-DD');
+	_wizCalDate = moment(_wiz.fecha).startOf('month');
+	_wizRenderCalStep4();
+}
+
+function _wizRenderCalStep4() {
+	const todayStr = moment().format('YYYY-MM-DD');
+	const selStr   = _wiz.fecha || todayStr;
+	const lastDay  = _wizCalDate.clone().endOf('month').date();
+	const mes      = _wizCalDate.clone().locale('es').format('MMMM');
+	const mesCap   = mes.charAt(0).toUpperCase() + mes.slice(1);
+	const anio     = _wizCalDate.format('YYYY');
+	const esMesActual = _wizCalDate.format('YYYY-MM') === moment().format('YYYY-MM');
 
 	let daysHtml = '';
-	for (let i = 0; i < 14; i++) {
-		const d   = today.clone().add(i, 'days');
-		const ds  = d.format('YYYY-MM-DD');
-		const sel = ds === _wiz.fecha ? ' selected' : '';
-		daysHtml += `<div class="wiz-day-item${sel}" data-date="${ds}">
-			<div class="wiz-day-dow">${d.locale('es').format('ddd').replace('.', '').toUpperCase()}</div>
-			<div class="wiz-day-num">${d.format('D')}</div>
-			<div class="wiz-day-mon">${d.locale('es').format('MMM').replace('.', '')}</div>
+	for (let d = 1; d <= lastDay; d++) {
+		const ds     = _wizCalDate.clone().date(d).format('YYYY-MM-DD');
+		const m      = _wizCalDate.clone().date(d);
+		const isPast = ds < todayStr;
+		const isSel  = ds === selStr && !isPast;
+		const isToday = ds === todayStr;
+		const dow    = m.locale('es').format('ddd').replace('.', '').toUpperCase();
+
+		let cls = 'wiz-day-item';
+		if (isPast)  cls += ' past';
+		if (isToday) cls += ' today';
+		if (isSel)   cls += ' selected';
+
+		daysHtml += `<div class="${cls}" data-date="${ds}">
+			<div class="wiz-day-dow">${dow}</div>
+			<div class="wiz-day-num">${d}</div>
 		</div>`;
 	}
 
+	const enMesSeleccionado = _wiz.fecha &&
+		moment(_wiz.fecha).format('YYYY-MM') === _wizCalDate.format('YYYY-MM');
+
 	$('#wizContent').html(`
 		<div class="wiz-step-label">Elige fecha y hora</div>
-		<div class="wiz-step-sub">Próximos días disponibles</div>
+		<div class="md-cal-header" style="margin: 0 -4px 4px;">
+			<button class="android-icon-btn" id="wizCalPrev" ${esMesActual ? 'disabled style="opacity:.3;pointer-events:none"' : ''}>
+				<i class="las la-angle-left"></i>
+			</button>
+			<div style="text-align:center">
+				<div class="md-cal-month-lbl">${mesCap}</div>
+				<div class="md-cal-year-lbl">${anio}</div>
+			</div>
+			<button class="android-icon-btn" id="wizCalNext">
+				<i class="las la-angle-right"></i>
+			</button>
+		</div>
 		<div class="wiz-day-strip-wrap">
 			<div class="wiz-day-strip" id="wizDayStrip">${daysHtml}</div>
 		</div>
 		<div class="wiz-time-section-lbl"><i class="las la-clock"></i> Horarios disponibles</div>
-		<div id="wizTimeGrid"><div class="wiz-time-empty"><i class="las la-spinner la-spin"></i> Cargando...</div></div>
+		<div id="wizTimeGrid"><div class="wiz-time-empty">Selecciona un día</div></div>
 	`);
 
 	setTimeout(() => {
-		const sel = document.querySelector('#wizDayStrip .wiz-day-item.selected');
-		if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+		const target = document.querySelector('#wizDayStrip .wiz-day-item.selected')
+			|| document.querySelector('#wizDayStrip .wiz-day-item.today');
+		if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 	}, 80);
 
+	$('#wizContent').off('click', '#wizCalPrev').on('click', '#wizCalPrev', () => {
+		_wizCalDate.subtract(1, 'month');
+		_wizRenderCalStep4();
+	});
+	$('#wizContent').off('click', '#wizCalNext').on('click', '#wizCalNext', () => {
+		_wizCalDate.add(1, 'month');
+		_wizRenderCalStep4();
+	});
+
 	$('#wizContent').off('click', '.wiz-day-item').on('click', '.wiz-day-item', async function () {
+		if ($(this).hasClass('past')) return;
 		$('.wiz-day-item').removeClass('selected');
 		$(this).addClass('selected');
 		_wiz.fecha = $(this).data('date');
@@ -700,7 +846,7 @@ function _wizStep4() {
 		await _wizLoadTimes(_wiz.fecha);
 	});
 
-	_wizLoadTimes(_wiz.fecha);
+	if (enMesSeleccionado && _wiz.fecha) _wizLoadTimes(_wiz.fecha);
 }
 
 async function _wizLoadTimes(dateStr) {
@@ -743,54 +889,28 @@ async function _wizLoadTimes(dateStr) {
 
 // ── Paso 5: Cliente ──
 function _wizStep5() {
-	const clientes = _wizData.clientes;
+	const c   = _wizData.clientes[0] || {};
+	const nom = `${c.APELLIDO_PATERNO || ''} ${c.APELLIDO_MATERNO || ''} ${c.NOMBRE || ''}`.replace(/\s+/g, ' ').trim();
+	const ini = ((c.APELLIDO_PATERNO || '')[0] || (c.NOMBRE || '')[0] || '?').toUpperCase();
 
-	const buildList = (list) => {
-		if (!list.length) return '<p class="wiz-empty-msg">Sin resultados</p>';
-		return list.slice(0, 40).map(c => {
-			const nom = `${c.APELLIDO_PATERNO || ''} ${c.APELLIDO_MATERNO || ''} ${c.NOMBRE || ''}`.replace(/\s+/g, ' ').trim();
-			const sel = c.ID_CLIENTE == _wiz.clienteId ? ' selected' : '';
-			const ini = ((c.APELLIDO_PATERNO || '')[0] || '').toUpperCase() + ((c.NOMBRE || '')[0] || '').toUpperCase();
-			return `<div class="wiz-client-item${sel}" data-id="${c.ID_CLIENTE}" data-nombre="${nom}">
-				<div class="wiz-client-avatar">${ini}</div>
-				<div class="wiz-client-info">
-					<div class="wiz-client-name">${nom}</div>
-					${c.TELEFONO ? `<div class="wiz-client-phone">${c.TELEFONO}</div>` : ''}
-				</div>
-				<i class="las la-check-circle wiz-client-check"></i>
-			</div>`;
-		}).join('');
-	};
+	_wiz.clienteId     = c.ID_CLIENTE;
+	_wiz.clienteNombre = nom;
 
 	$('#wizContent').html(`
-		<div class="wiz-step-label">Datos del cliente</div>
-		<div class="wiz-step-sub">Selecciona o busca el cliente</div>
-		<div class="wiz-client-search">
-			<i class="las la-search" style="color:var(--md-on-surface-var);font-size:18px;flex-shrink:0"></i>
-			<input type="text" id="wizClientSearch" placeholder="Buscar por nombre o teléfono...">
+		<div class="wiz-step-label">Confirma el cliente</div>
+		<div class="wiz-client-item selected" style="pointer-events:none">
+			<div class="wiz-client-avatar">${ini}</div>
+			<div class="wiz-client-info">
+				<div class="wiz-client-name">${nom}</div>
+				${c.NRO_CELULAR ? `<div class="wiz-client-phone"><i class="las la-phone"></i> ${c.NRO_CELULAR}</div>` : ''}
+			</div>
+			<i class="las la-check-circle wiz-client-check" style="display:block"></i>
 		</div>
-		<div id="wizClientList" class="wiz-client-list">${buildList(clientes)}</div>
 		<div class="wiz-field-group" style="margin-top:14px">
 			<div class="wiz-field-label"><i class="las la-comment-alt"></i> Comentario</div>
 			<input type="text" id="wizComentario" class="wiz-field-input" placeholder="Opcional..." value="${_wiz.comentario || ''}">
 		</div>
 	`);
-
-	$('#wizClientSearch').on('input', function () {
-		const q = $(this).val().toLowerCase().trim();
-		const filtered = !q ? clientes : clientes.filter(c => {
-			const nom = `${c.APELLIDO_PATERNO || ''} ${c.APELLIDO_MATERNO || ''} ${c.NOMBRE || ''}`.toLowerCase();
-			return nom.includes(q) || (c.TELEFONO || '').includes(q);
-		});
-		$('#wizClientList').html(buildList(filtered));
-	});
-
-	$(document).off('click', '.wiz-client-item').on('click', '.wiz-client-item', function () {
-		$('.wiz-client-item').removeClass('selected');
-		$(this).addClass('selected');
-		_wiz.clienteId     = $(this).data('id');
-		_wiz.clienteNombre = $(this).data('nombre');
-	});
 }
 
 // ── Navegación ──
@@ -806,7 +926,7 @@ async function _wizNext() {
 
 	switch (_wiz.step) {
 		case 1:
-			if (!_wiz.tipo)       { toast('Selecciona el tipo de cliente'); return; }
+			if (!_wiz.tipoClienteId) { toast('Selecciona el tipo de cliente'); return; }
 			break;
 		case 2:
 			if (!_wiz.servicioId) { toast('Selecciona un servicio'); return; }
@@ -839,6 +959,7 @@ async function _wizEnviar() {
 		fd.append('fechaReserva', moment(_wiz.fecha).format('DD-MM-YYYY'));
 		fd.append('horaReserva',  _wiz.hora);
 		fd.append('comentario',   _wiz.comentario || '');
+		fd.append('tipoCliente',  _wiz.tipoClienteId);
 		fd.append('sesId',        verSesion());
 
 		const r = await axios.post('/api/reserva/crear', fd, {
@@ -890,6 +1011,15 @@ function _wizShowSuccess() {
 					<span class="wiz-sum-key">Cliente</span>
 					<span class="wiz-sum-val">${_wiz.clienteNombre}</span>
 				</div>
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Tipo</span>
+					<span class="wiz-sum-val">${_wiz.tipo || '—'}</span>
+				</div>
+				${_wiz.comentario ? `
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Comentario</span>
+					<span class="wiz-sum-val">${_wiz.comentario}</span>
+				</div>` : ''}
 			</div>
 			<button class="wiz-btn-primary" onclick="cerrar_general1()">
 				<i class="las la-calendar-check"></i> Volver al calendario

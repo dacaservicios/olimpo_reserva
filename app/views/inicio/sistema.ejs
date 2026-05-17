@@ -17,17 +17,7 @@
 <header class="android-top-bar">
     <div class="brand" onclick="irReservas()">
         <img src="/imagenes/logo.png" alt="Olimpo" class="imagenUsuarioInicio">
-        <span class="brand-name">Olimpo<em>Barber</em></span>
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;">
-        <button class="android-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasApps" title="Módulos">
-            <i class="las la-th-large"></i>
-        </button>
-        <button class="android-icon-btn android-avatar" style="padding:0;border:2px solid var(--md-primary);border-radius:50%;"
-            data-bs-toggle="offcanvas" data-bs-target="#offcanvasProfile">
-            <img class="imagenUsuarioInicio" src="/imagenes/logo.png" alt="Perfil"
-                style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
-        </button>
+        <span class="brand-name">Olimpo</span>
     </div>
 </header>
 
@@ -39,13 +29,6 @@
 </main>
 
 <!-- ═══════════════════════════════
-     FAB — Nueva Reserva
-════════════════════════════════ -->
-<button class="android-fab" id="fabNuevaReserva" onclick="irReservas()" title="Nueva reserva">
-    <i class="las la-calendar-plus"></i>
-</button>
-
-<!-- ═══════════════════════════════
      BOTTOM NAVIGATION
 ════════════════════════════════ -->
 <nav class="android-bottom-nav">
@@ -54,11 +37,10 @@
         <i class="las la-calendar-alt md-nav-icon"></i>
         <span class="md-nav-label">Reservas</span>
     </button>
-    <button class="md-nav-item" id="navApps"
-        data-bs-toggle="offcanvas" data-bs-target="#offcanvasApps">
+    <button class="md-nav-item" id="navMisCitas" onclick="abrirMisCitas()">
         <div class="md-nav-pill"></div>
-        <i class="las la-th md-nav-icon"></i>
-        <span class="md-nav-label">Módulos</span>
+        <i class="las la-calendar-check md-nav-icon"></i>
+        <span class="md-nav-label">Mis Citas</span>
     </button>
     <button class="md-nav-item" id="navPerfil"
         data-bs-toggle="offcanvas" data-bs-target="#offcanvasProfile">
@@ -85,8 +67,9 @@
             </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;">
-            <a id="cambiaPassword" href="#" class="md-list-item" data-bs-dismiss="offcanvas">
-                <i class="bx bx-slider-alt"></i>
+            <a id="cambiaPassword" href="#" class="md-list-item" data-bs-dismiss="offcanvas"
+               onclick="setTimeout(abrirCambiaPasswordPanel,350)">
+                <i class="bx bx-lock-alt"></i>
                 <span>Cambiar contraseña</span>
             </a>
             <a id="salir" href="#" class="md-list-item danger">
@@ -98,52 +81,75 @@
 </div>
 
 <!-- ═══════════════════════════════
-     OFFCANVAS — MÓDULOS
+     OFFCANVAS — MIS CITAS
 ════════════════════════════════ -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasApps">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasMisCitas">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Módulos</h5>
+        <h5 class="offcanvas-title"><i class="las la-calendar-check me-2"></i>Mis Citas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body" id="misCitasBody">
+        <div class="md-cal-empty">
+            <i class="las la-spinner la-spin"></i>
+            <p>Cargando...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════
+     OFFCANVAS — CAMBIAR CONTRASEÑA
+════════════════════════════════ -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasPassword">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="bx bx-lock-alt me-2"></i>Cambiar Contraseña</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-        <div class="row g-2">
-            <div class="col-4">
-                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irReservas()">
-                    <div class="md-app-icon"><i class="las la-calendar-alt"></i></div>
-                    <span>Reservas</span>
+        <form id="formCambiaPass" novalidate autocomplete="off">
+            <div class="mb-3">
+                <label>Contraseña actual</label>
+                <div class="md-pass-wrap">
+                    <input id="passActualInput" name="contrasenaActual" type="password"
+                           class="form-control" maxlength="50" placeholder="Contraseña actual">
+                    <button type="button" class="md-pass-toggle" data-target="passActualInput">
+                        <i class="las la-eye-slash"></i>
+                    </button>
                 </div>
+                <div class="md-pass-msg" id="msgPassActual"></div>
             </div>
-            <div class="col-4">
-                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('cliente')">
-                    <div class="md-app-icon"><i class="las la-users"></i></div>
-                    <span>Clientes</span>
+            <div class="mb-3">
+                <label>Contraseña nueva</label>
+                <div class="md-pass-wrap">
+                    <input id="passNuevaInput" name="contrasenaNueva" type="password"
+                           class="form-control" maxlength="50" placeholder="Contraseña nueva">
+                    <button type="button" class="md-pass-toggle" data-target="passNuevaInput">
+                        <i class="las la-eye-slash"></i>
+                    </button>
                 </div>
-            </div>
-            <div class="col-4">
-                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('empleado')">
-                    <div class="md-app-icon"><i class="las la-user-tie"></i></div>
-                    <span>Empleados</span>
+                <div class="md-pass-reqs">
+                    <span class="req-item" id="reqLen">6–16 chars</span>
+                    <span class="req-item" id="reqNum">Número</span>
+                    <span class="req-item" id="reqMay">Mayúscula</span>
+                    <span class="req-item" id="reqMin2">Minúscula</span>
+                    <span class="req-item" id="reqEsp">Especial</span>
                 </div>
+                <div class="md-pass-msg" id="msgPassNueva"></div>
             </div>
-            <div class="col-4">
-                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('serviciosucursal')">
-                    <div class="md-app-icon"><i class="las la-cut"></i></div>
-                    <span>Servicios</span>
+            <div class="mb-4">
+                <label>Repite contraseña nueva</label>
+                <div class="md-pass-wrap">
+                    <input id="passRepiteInput" name="contrasenaRepite" type="password"
+                           class="form-control" maxlength="50" placeholder="Repite la contraseña">
+                    <button type="button" class="md-pass-toggle" data-target="passRepiteInput">
+                        <i class="las la-eye-slash"></i>
+                    </button>
                 </div>
+                <div class="md-pass-msg" id="msgPassRepite"></div>
             </div>
-            <div class="col-4">
-                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('parametro')">
-                    <div class="md-app-icon"><i class="las la-sliders-h"></i></div>
-                    <span>Parámetros</span>
-                </div>
-            </div>
-            <div class="col-4">
-                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irInicio()">
-                    <div class="md-app-icon"><i class="las la-chart-bar"></i></div>
-                    <span>Dashboard</span>
-                </div>
-            </div>
-        </div>
+            <button type="button" id="btnGuardaPass" class="md-pass-btn-save w-100">
+                <i class="bx bx-save me-1"></i> Guardar contraseña
+            </button>
+        </form>
     </div>
 </div>
 
@@ -170,5 +176,129 @@ function irInicio() {
 function irModulo(ruta, idSubMenu) {
     setNavActive('navApps');
     vistaMenuSubMenu({ ruta: ruta, idSubMenu: idSubMenu || 0 });
+}
+
+// ── Cambiar contraseña ──────────────────────────────────────────────────
+function abrirCambiaPasswordPanel() {
+    var el = document.getElementById('offcanvasPassword');
+    var offcanvas = bootstrap.Offcanvas.getOrCreateInstance(el);
+
+    // Limpiar formulario
+    document.getElementById('formCambiaPass').reset();
+    ['msgPassActual','msgPassNueva','msgPassRepite'].forEach(function(id){
+        document.getElementById(id).textContent = '';
+        document.getElementById(id).style.display = 'none';
+    });
+    ['reqLen','reqNum','reqMay','reqMin2','reqEsp'].forEach(function(id){
+        document.getElementById(id).classList.remove('met');
+    });
+
+    // Restaurar tipo password e ícono de toggles
+    ['passActualInput','passNuevaInput','passRepiteInput'].forEach(function(id){
+        var inp = document.getElementById(id);
+        inp.type = 'password';
+        var btn = inp.parentElement.querySelector('.md-pass-toggle i');
+        if (btn) { btn.className = 'las la-eye-slash'; }
+    });
+
+    offcanvas.show();
+    _setupPassEvents();
+}
+
+function _setupPassEvents() {
+    var form = document.getElementById('formCambiaPass');
+
+    // Toggle visibilidad
+    form.querySelectorAll('.md-pass-toggle').forEach(function(btn){
+        btn.onclick = function(){
+            var inp = document.getElementById(btn.dataset.target);
+            var ic  = btn.querySelector('i');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                ic.className = 'las la-eye';
+            } else {
+                inp.type = 'password';
+                ic.className = 'las la-eye-slash';
+            }
+        };
+    });
+
+    // Validación en tiempo real — contraseña nueva
+    document.getElementById('passNuevaInput').oninput = function(){
+        _passCheckReqs(this.value);
+    };
+
+    // Botón guardar
+    document.getElementById('btnGuardaPass').onclick = _passGuardar;
+}
+
+function _passCheckReqs(val) {
+    var especiales = '!¡#$%&()*+-./:;=¿?@[]{|}';
+    var ok = {
+        len: val.length >= 6 && val.length <= 16,
+        num: /[0-9]/.test(val),
+        may: /[A-ZÁÉÍÓÚÑ]/.test(val),
+        min: /[a-záéíóúñ]/.test(val),
+        esp: val.split('').some(function(c){ return especiales.indexOf(c) !== -1; })
+    };
+    document.getElementById('reqLen').classList.toggle('met', ok.len);
+    document.getElementById('reqNum').classList.toggle('met', ok.num);
+    document.getElementById('reqMay').classList.toggle('met', ok.may);
+    document.getElementById('reqMin2').classList.toggle('met', ok.min);
+    document.getElementById('reqEsp').classList.toggle('met', ok.esp);
+    return ok.len && ok.num && ok.may && ok.min && ok.esp;
+}
+
+function _passShowMsg(id, msg) {
+    var el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+}
+
+async function _passGuardar() {
+    var actual  = document.getElementById('passActualInput').value.trim();
+    var nueva   = document.getElementById('passNuevaInput').value.trim();
+    var repite  = document.getElementById('passRepiteInput').value.trim();
+
+    _passShowMsg('msgPassActual','');
+    _passShowMsg('msgPassNueva','');
+    _passShowMsg('msgPassRepite','');
+
+    if (!actual)  { _passShowMsg('msgPassActual','Campo obligatorio'); return; }
+    if (!nueva)   { _passShowMsg('msgPassNueva','Campo obligatorio'); return; }
+    if (!_passCheckReqs(nueva)) { _passShowMsg('msgPassNueva','La contraseña no cumple los requisitos'); return; }
+    if (!repite)  { _passShowMsg('msgPassRepite','Campo obligatorio'); return; }
+    if (nueva !== repite) { _passShowMsg('msgPassRepite','Las contraseñas no coinciden'); return; }
+
+    bloquea();
+    try {
+        const vResp = await axios.put('/api/acceso/verificaPass/' + verSesion(),
+            { contrasenaActual: actual },
+            { headers: { authorization: 'Bearer ' + verToken() } }
+        );
+        desbloquea();
+        if (!vResp.data.valor.resultado) {
+            _passShowMsg('msgPassActual', vResp.data.valor.mensaje || 'Contraseña incorrecta');
+            return;
+        }
+
+        bloquea();
+        const cResp = await axios.put('/api/acceso/password/' + verSesion(),
+            { contrasenaNueva: nueva },
+            { headers: { authorization: 'Bearer ' + verToken() } }
+        );
+        desbloquea();
+        if (cResp.data.valor.resultado) {
+            bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasPassword')).hide();
+            Swal.fire({ icon: 'success', title: '¡Contraseña actualizada!', timer: 2000, showConfirmButton: false, toast: true, position: 'top' });
+        } else {
+            _passShowMsg('msgPassNueva', cResp.data.valor.mensaje || 'Error al cambiar');
+        }
+    } catch(err) {
+        desbloquea();
+        var msg = (err.response && err.response.data && err.response.data.error)
+                  ? err.response.data.error.message : 'Error de conexión';
+        _passShowMsg('msgPassActual', msg);
+    }
 }
 </script>

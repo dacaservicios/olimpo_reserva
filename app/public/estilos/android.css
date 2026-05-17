@@ -421,10 +421,38 @@ form .card-header { padding: 8px 14px !important; }
 
 /* Stacking z-indexes */
 #offcanvasProfile.offcanvas,
-#offcanvasApps.offcanvas  { z-index: 1050; }
-#general1.offcanvas       { z-index: 1060; }
-#general2.offcanvas       { z-index: 1070; }
-#general3.offcanvas       { z-index: 1080; }
+#offcanvasApps.offcanvas,
+#offcanvasMisCitas.offcanvas { z-index: 1050; }
+#offcanvasPassword.offcanvas { z-index: 1055; }
+#general1.offcanvas          { z-index: 1060; }
+#general2.offcanvas          { z-index: 1070; }
+#general3.offcanvas          { z-index: 1080; }
+
+/* ── Cambiar contraseña ── */
+.md-pass-wrap { position: relative; display: flex; align-items: center; }
+.md-pass-wrap .form-control { padding-right: 42px !important; }
+.md-pass-toggle {
+  position: absolute; right: 6px;
+  background: none; border: none; padding: 6px;
+  color: var(--md-on-surface-var); cursor: pointer; line-height: 1;
+}
+.md-pass-toggle:hover { color: var(--md-primary); }
+.md-pass-toggle i { font-size: 18px; }
+.md-pass-msg { font-size: 11px; color: var(--md-error); margin-top: 3px; display: none; }
+.md-pass-reqs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.req-item {
+  font-size: 10px; padding: 2px 7px; border-radius: 20px;
+  background: var(--md-surface-2); color: var(--md-on-surface-var);
+  border: 1px solid var(--md-outline-var); transition: all .2s;
+}
+.req-item.met { background: rgba(74,222,128,.15); color: #4ade80; border-color: #4ade80; }
+.md-pass-btn-save {
+  background: var(--md-primary); color: #000;
+  border: none; border-radius: var(--md-r-md);
+  padding: 12px; font-weight: 700; font-size: 14px; cursor: pointer;
+  letter-spacing: .3px; transition: opacity .2s;
+}
+.md-pass-btn-save:hover { opacity: .88; }
 
 /* ================================================
    ALERTS
@@ -455,7 +483,7 @@ form .card-header { padding: 8px 14px !important; }
 
 /* Contenedor general */
 .md-cal-app {
-  display: flex; flex-direction: column; gap: 10px; padding: 4px 4px 12px;
+  display: flex; flex-direction: column; gap: 10px; padding: 4px 4px 80px;
 }
 
 /* Cabecera mes */
@@ -613,6 +641,55 @@ form .card-header { padding: 8px 14px !important; }
 }
 .md-cal-empty i { font-size: 52px; color: var(--md-outline); display: block; margin-bottom: 10px; }
 .md-cal-empty p { font-size: 14px; font-weight: 600; margin: 0; }
+
+/* Vista principal — encabezado de hoy */
+.md-today-header {
+  text-align: center; padding: 24px 0 18px;
+}
+.md-today-dow {
+  font-size: 12px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--md-on-surface-var);
+}
+.md-today-num {
+  font-size: 56px; font-weight: 800; line-height: 1;
+  color: var(--md-primary);
+}
+.md-today-mes {
+  font-size: 13px; color: var(--md-on-surface-var); margin-top: 4px;
+}
+
+/* Botón grande Nueva Reserva — fijo sobre la barra inferior */
+.md-nueva-reserva-btn {
+  position: fixed;
+  bottom: calc(var(--md-bot-h) + 8px);
+  left: calc(var(--md-frame-l) + 16px);
+  right: calc(var(--md-frame-l) + 16px);
+  width: auto;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px;
+  background: var(--md-primary); color: #000;
+  border: none; border-radius: 14px;
+  font-size: 16px; font-weight: 700; letter-spacing: .3px;
+  cursor: pointer; z-index: 490;
+  transition: opacity .2s, transform .1s;
+}
+.md-nueva-reserva-btn:active { transform: scale(.98); opacity: .85; }
+.md-nueva-reserva-btn i { font-size: 20px; }
+
+/* Mis Citas — panel de todas las citas */
+.md-citas-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--md-primary);
+  padding: 14px 4px 4px; margin-bottom: 2px;
+}
+.md-citas-section-title.past { color: var(--md-on-surface-var); margin-top: 8px; }
+.md-citas-group-header {
+  font-size: 12px; font-weight: 600;
+  color: var(--md-on-surface); opacity: .75;
+  padding: 8px 4px 4px; margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.md-citas-group-header.past { color: var(--md-on-surface-var); }
 
 /* FullCalendar — mantenido por si se usa en otros módulos */
 /* ================================================
@@ -909,7 +986,7 @@ table tbody a.crud i { color: white; }
 .whatsapp-float {
   position: fixed !important;
   right: calc(var(--md-frame-l) + 16px) !important;
-  bottom: calc(var(--md-bot-h) + 80px) !important;
+  bottom: calc(var(--md-bot-h) + 76px) !important;
   width: 50px !important; height: 50px !important;
   background: #25d366 !important; color: #fff !important;
   border-radius: 50% !important;
@@ -1313,6 +1390,10 @@ table tbody a.crud i { color: white; }
 .wiz-day-item.selected .wiz-day-dow,
 .wiz-day-item.selected .wiz-day-num,
 .wiz-day-item.selected .wiz-day-mon { color: #000; }
+.wiz-day-item.today .wiz-day-num         { color: var(--md-primary); }
+.wiz-day-item.selected.today .wiz-day-num { color: #000; }
+.wiz-day-item.past  { opacity: .35; cursor: default; pointer-events: none; }
+.wiz-day-item.past:hover { border-color: transparent; background: transparent; }
 
 .wiz-time-section-lbl {
   font-size: 14px; font-weight: 700; color: var(--md-on-surface);
@@ -1333,6 +1414,18 @@ table tbody a.crud i { color: white; }
 .wiz-time-empty { text-align: center; padding: 22px 12px; color: var(--md-on-surface-var); font-size: 13px; }
 
 /* ── Step 5: Cliente ── */
+.wiz-client-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(201,162,39,.12); border: 1px solid var(--md-primary);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+  color: var(--md-primary); font-size: 14px; font-weight: 600;
+}
+.wiz-client-chip span { flex: 1; }
+.wiz-client-chip-clear {
+  background: none; border: none; color: var(--md-primary);
+  cursor: pointer; padding: 0; font-size: 16px; line-height: 1;
+}
+
 .wiz-client-search {
   display: flex; align-items: center; gap: 10px;
   background: var(--md-surface-2); border: 1.5px solid var(--md-outline);

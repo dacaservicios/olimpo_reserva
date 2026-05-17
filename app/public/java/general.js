@@ -21,11 +21,7 @@ $(document).ready(function() {
         $('.main-profile-menu').removeClass('show')
     });
 
-    $('#cambiaPassword').off( 'click');
-    $('#cambiaPassword').on( 'click',function () {
-        vistaCambiaPassword();
-        $('.main-profile-menu').removeClass('show')
-    });
+    $('#cambiaPassword').off('click');
 });
 
 function popup(){
