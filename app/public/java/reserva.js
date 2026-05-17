@@ -1,441 +1,1083 @@
-//FUNCIONES
-$(document).ready(function() {
-	try {
-		vistaReserva();
-	}catch (err) {
+// ═══════════════════════════════════════════
+//  OLIMPO BARBER — VISTA RESERVAS + WIZARD
+// ═══════════════════════════════════════════
+
+// ── Estado global del calendario ──
+let _calDate     = moment();
+let _calSelected = moment();
+let _calEvents   = [];
+let _calTabla    = 'reserva';
+
+// ── Estado del wizard ──
+let _wiz     = {};
+let _wizData = { servicios: [], barberos: [], clientes: [] };
+
+// ── Detalle/edición de reserva ──
+let _resDetalle = null;
+
+// ── Entry point ──
+$(document).ready(function () {
+	try { vistaReserva(); }
+	catch (err) {
 		desbloquea();
-		message=(err.response)?err.response.data.error:err;
-		mensajeError(message);
+		mensajeError((err.response) ? err.response.data.error : err);
 	}
 });
 
-async function vistaReserva(){
-	let tabla="reserva";
+// ═══════════════════════════════════════════
+//  VISTA PRINCIPAL — CALENDARIO
+// ═══════════════════════════════════════════
+async function vistaReserva() {
+	_calTabla = 'reserva';
 
-	let listado=`
+	const html = `
+	<div class="md-cal-app">
 
+		<!-- Cabecera mes -->
+		<div class="md-cal-header">
+			<button class="android-icon-btn" id="calPrev"><i class="las la-angle-left"></i></button>
+			<div style="text-align:center">
+				<div class="md-cal-month-lbl" id="calMonthLbl"></div>
+				<div class="md-cal-year-lbl"  id="calYearLbl"></div>
+			</div>
+			<button class="android-icon-btn" id="calNext"><i class="las la-angle-right"></i></button>
+		</div>
 
-					<form class="needs-validation pt-2" novalidate>
-						<div class="card-header tx-medium bd-0 tx-white bg-primary-gradient"><i class="las la-bell"></i> RESERVA</div>
-						<div class="pd-b-0  main-content-calendar pt-0">
-							<div class="row">
-								<div class="col-md-12">
-									<div class="card">
-										<div class="card-body">
-											<div class="row">
-												<div class="col-md-12">
-													<div id='calendar'></div>
-												</div>
-												<a href="https://wa.me/51963754038?text=Hola%20👋%0Aquisiera%20hacer%20una%20consulta%20📩😊" 
-													class="whatsapp-float" 
-													target="_blank">
-													<i class="lab la-whatsapp"></i>
-												</a>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</form>`;
-	$("#cuerpoPrincipal").html(listado);
-	let objeto={
-		tabla:tabla,
-	}
+		<!-- Strip horizontal de días -->
+		<div class="md-strip-wrap">
+			<div class="md-day-strip" id="calDayStrip"></div>
+		</div>
 
-	activarCalendario(objeto);
+		<!-- Sección de tarjetas -->
+		<div class="md-cal-section-header">
+			<div class="md-cal-section-icon"><i class="las la-calendar-check"></i></div>
+			<span id="calDayTitle">Selecciona un día</span>
+		</div>
+		<div id="calCards"></div>
+
+	</div>
+	<a href="https://wa.me/51963754038?text=Hola%20👋%0Aquisiera%20hacer%20una%20consulta%20📩😊"
+		class="whatsapp-float" target="_blank">
+		<i class="lab la-whatsapp"></i>
+	</a>`;
+
+	$('#cuerpoPrincipal').html(html);
+
+	$(document).off('click', '#calPrev, #calNext')
+		.on('click', '#calPrev', () => { _calDate.subtract(1, 'month'); _renderCalendar(); })
+		.on('click', '#calNext', () => { _calDate.add(1, 'month');      _renderCalendar(); });
+
+	await _cargarEventos();
+	_renderCalendar();
 }
 
-async function formularioCalendario(objeto){
+async function _cargarEventos() {
 	bloquea();
-	const cliente = await axios.get("/api/cliente/buscar/"+verSesion()+"/"+verSesion(),{ 
-		headers:{
-			authorization: `Bearer ${verToken()}`
-		} 
+	try {
+		const r = await axios.get('/api/' + _calTabla + '/listar/0/' + verSesion(), {
+			headers: { authorization: `Bearer ${verToken()}` }
+		});
+		_calEvents = r.data.valor.info || [];
+	} catch (err) {
+		mensajeError((err.response) ? err.response.data.error : err);
+	}
+	desbloquea();
+}
+
+async function refrescarCalendario() {
+	await _cargarEventos();
+	_renderCalendar();
+}
+
+function _renderCalendar() {
+	const mes = _calDate.clone().locale('es').format('MMMM');
+	$('#calMonthLbl').text(mes.charAt(0).toUpperCase() + mes.slice(1));
+	$('#calYearLbl').text(_calDate.format('YYYY'));
+
+	const lastDay = _calDate.clone().endOf('month').date();
+	const today   = moment().format('YYYY-MM-DD');
+	const selStr  = _calSelected.format('YYYY-MM-DD');
+
+	let html = '';
+	for (let d = 1; d <= lastDay; d++) {
+		const dateStr = _calDate.clone().date(d).format('YYYY-MM-DD');
+		const m       = _calDate.clone().date(d);
+		const isToday = dateStr === today;
+		const isSel   = dateStr === selStr;
+		const isPast  = dateStr < today;
+
+		const dayEvts = _calEvents.filter(e =>
+			moment(e.FECHA_RESERVA).format('YYYY-MM-DD') === dateStr
+		);
+		const dots = dayEvts.slice(0, 3).map(e =>
+			`<span class="md-dot" style="background:${e.COLOR || 'var(--md-primary)'}"></span>`
+		).join('');
+
+		let cls = 'md-strip-day';
+		if (isToday)            cls += ' today';
+		if (isSel)              cls += ' selected';
+		if (isPast && !isToday) cls += ' past';
+		if (dayEvts.length > 0) cls += ' has-events';
+
+		const dow = m.locale('es').format('ddd').replace('.', '').toUpperCase();
+
+		html += `<div class="${cls}" data-date="${dateStr}">
+			<span class="md-strip-dow">${dow}</span>
+			<span class="md-strip-num">${d}</span>
+			<div class="md-strip-dots">${dots}</div>
+		</div>`;
+	}
+
+	$('#calDayStrip').html(html);
+
+	// Auto-scroll al día seleccionado (o hoy si no hay selección en este mes)
+	setTimeout(() => {
+		const target = document.querySelector('#calDayStrip .selected')
+			|| document.querySelector('#calDayStrip .today');
+		if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+	}, 60);
+
+	$('#calDayStrip').off('click').on('click', '.md-strip-day', function () {
+		const date = $(this).data('date');
+		if (!date) return;
+		_calSelected = moment(date);
+		$('#calDayStrip .md-strip-day').removeClass('selected');
+		$(this).addClass('selected');
+		_renderCards(date);
 	});
 
-	const empleado = await axios.get("/api/empleado/listar/0/"+verSesion(),{ 
-		headers:{
-			authorization: `Bearer ${verToken()}`
-		} 
+	if (_calSelected.format('YYYY-MM') === _calDate.format('YYYY-MM')) {
+		_renderCards(selStr);
+	} else {
+		$('#calDayTitle').text('Selecciona un día');
+		$('#calCards').html('');
+	}
+}
+
+function _renderCards(dateStr) {
+	const dayEvts = _calEvents.filter(e =>
+		moment(e.FECHA_RESERVA).format('YYYY-MM-DD') === dateStr
+	).sort((a, b) =>
+		moment(a.FECHA_RESERVA).valueOf() - moment(b.FECHA_RESERVA).valueOf()
+	);
+
+	const label = moment(dateStr).locale('es').format('dddd D [de] MMMM');
+	$('#calDayTitle').text(label.charAt(0).toUpperCase() + label.slice(1));
+
+	const today  = moment().format('YYYY-MM-DD');
+	const isPast = dateStr < today;
+
+	if (dayEvts.length === 0) {
+		$('#calCards').html(`
+			<div class="md-cal-empty">
+				<i class="las la-calendar-times"></i>
+				<p>Sin reservas este día</p>
+				${!isPast ? `<button class="btn btn-primary mt-3" onclick="nuevaReservaFecha('${dateStr}')">
+					<i class="las la-plus"></i> Nueva reserva
+				</button>` : ''}
+			</div>`);
+		return;
+	}
+
+	let html = dayEvts.map(e => {
+		const hora     = moment(e.FECHA_RESERVA).format('HH:mm');
+		const cliente  = `${e.PATERNO_CLIENTE} ${e.NOMBRE_CLIENTE}`;
+		const barbero  = e.NOMBRE_EMPLEADO || '';
+		const servicio = e.NOMBRE || '';
+		const color    = e.COLOR || 'var(--md-primary)';
+		const fg       = (typeof getContrastColor === 'function') ? getContrastColor(color) : '#fff';
+
+		return `
+		<div class="md-res-card${isPast ? ' past' : ''}"
+			data-id="${e.ID_RESERVA}" data-date="${dateStr}">
+			<div class="md-res-chip" style="background:${color};color:${fg}">
+				<span class="md-res-hora">${hora}</span>
+			</div>
+			<div class="md-res-info">
+				<div class="md-res-cliente">${cliente}</div>
+				<div class="md-res-meta">
+					<i class="las la-cut"></i> ${servicio}
+					&nbsp;·&nbsp;
+					<i class="las la-user"></i> ${barbero}
+				</div>
+			</div>
+			${!isPast ? '<i class="las la-pen md-res-edit"></i>' : ''}
+		</div>`;
+	}).join('');
+
+	if (!isPast) {
+		html += `<button class="md-add-btn" onclick="nuevaReservaFecha('${dateStr}')">
+			<i class="las la-plus"></i> Agregar reserva
+		</button>`;
+	}
+
+	$('#calCards').html(html);
+
+	if (!isPast) {
+		$('#calCards').off('click', '.md-res-card').on('click', '.md-res-card', function () {
+			const id  = $(this).data('id');
+			const evt = _calEvents.find(e => e.ID_RESERVA == id);
+			if (evt) verDetalleReserva(evt);
+		});
+	}
+}
+
+// ═══════════════════════════════════════════
+//  DETALLE DE RESERVA
+// ═══════════════════════════════════════════
+
+function verDetalleReserva(evt) {
+	const hora    = moment(evt.FECHA_RESERVA).format('HH:mm');
+	const fechaLb = moment(evt.FECHA_RESERVA).locale('es').format('D [de] MMMM YYYY');
+	const fechaStr = fechaLb.charAt(0).toUpperCase() + fechaLb.slice(1);
+	const cliente  = `${evt.PATERNO_CLIENTE || ''} ${evt.NOMBRE_CLIENTE || ''}`.trim();
+	const barbero  = evt.NOMBRE_EMPLEADO || '—';
+	const servicio = evt.NOMBRE || '—';
+	const color    = evt.COLOR || 'var(--md-primary)';
+	const id       = evt.ID_RESERVA;
+
+	_resDetalle = evt;
+
+	const estadoBadge = _resEstadoBadge(evt.ESTADO || evt.ID_ESTADO);
+
+	mostrar_general1({
+		titulo: 'Detalle de Reserva',
+		msg: `
+		<div class="res-detail">
+			<div class="res-detail-hero" style="border-left:4px solid ${color}">
+				<div class="res-detail-time">${hora}</div>
+				<div class="res-detail-date">${fechaStr}</div>
+			</div>
+
+			<div class="res-detail-card">
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-user"></i> Cliente</span>
+					<span class="res-detail-val">${cliente}</span>
+				</div>
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-cut"></i> Servicio</span>
+					<span class="res-detail-val">${servicio}</span>
+				</div>
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-user-tie"></i> Barbero</span>
+					<span class="res-detail-val">${barbero}</span>
+				</div>
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-clock"></i> Hora</span>
+					<span class="res-detail-val">${hora}</span>
+				</div>
+				<div class="res-detail-row last">
+					<span class="res-detail-key"><i class="las la-tag"></i> Estado</span>
+					<span class="res-detail-val">${estadoBadge}</span>
+				</div>
+			</div>
+
+			<div class="res-detail-actions">
+				<button class="res-btn-edit" onclick="abrirEdicionReserva(${id})">
+					<i class="las la-pen"></i> Editar
+				</button>
+				<button class="res-btn-cancel" onclick="_resCancelarActual()">
+					<i class="las la-times-circle"></i> Cancelar Cita
+				</button>
+			</div>
+		</div>`
+	});
+}
+
+function _resEstadoBadge(estado) {
+	const map = {
+		'PENDIENTE':   ['#2e1a00', '#f59e0b', 'PENDIENTE'],
+		'CONFIRMADO':  ['#0a2e10', '#4caf50', 'CONFIRMADO'],
+		'CONFIRMADA':  ['#0a2e10', '#4caf50', 'CONFIRMADA'],
+		'CANCELADO':   ['#2e0a0a', '#cf6679', 'CANCELADO'],
+		'CANCELADA':   ['#2e0a0a', '#cf6679', 'CANCELADA'],
+		'COMPLETADO':  ['#0a1e2e', '#64b5f6', 'COMPLETADO'],
+		'COMPLETADA':  ['#0a1e2e', '#64b5f6', 'COMPLETADA'],
+	};
+	const key = String(estado || '').toUpperCase();
+	const [bg, fg, lbl] = map[key] || ['#1a1a1a', '#909090', estado || 'PENDIENTE'];
+	return `<span class="res-estado-badge" style="background:${bg};color:${fg};border-color:${fg}">${lbl}</span>`;
+}
+
+function _resCancelarActual() {
+	if (!_resDetalle) return;
+	const nombre = `${_resDetalle.PATERNO_CLIENTE || ''} ${_resDetalle.NOMBRE_CLIENTE || ''}`.trim();
+	reservaElimina({ id: _resDetalle.ID_RESERVA, nombre, tabla: 'reserva' });
+}
+
+// ═══════════════════════════════════════════
+//  EDICIÓN DE RESERVA
+// ═══════════════════════════════════════════
+
+async function abrirEdicionReserva(id) {
+	bloquea();
+	try {
+		const r = await axios.get(`/api/reserva/buscar/${id}/${verSesion()}`, {
+			headers: { authorization: `Bearer ${verToken()}` }
+		});
+		const res = r.data.valor.info;
+		_resDetalle = { ..._resDetalle, ...res, _id: id };
+		desbloquea();
+		_mostrarFormEdicion(res, id);
+	} catch (err) {
+		desbloquea();
+		mensajeError(err.response ? err.response.data.error : err);
+	}
+}
+
+function _mostrarFormEdicion(res, id) {
+	const today       = moment();
+	const fechaActual = moment(res.FECHA_RESERVA);
+	let   fechaEdit   = fechaActual.clone();
+
+	// Si la fecha es pasada, usar hoy
+	if (fechaEdit.isBefore(today, 'day')) fechaEdit = today.clone();
+
+	let daysHtml = '';
+	for (let i = 0; i < 14; i++) {
+		const d   = today.clone().add(i, 'days');
+		const ds  = d.format('YYYY-MM-DD');
+		const sel = ds === fechaEdit.format('YYYY-MM-DD') ? ' selected' : '';
+		daysHtml += `<div class="wiz-day-item${sel}" data-date="${ds}">
+			<div class="wiz-day-dow">${d.locale('es').format('ddd').replace('.', '').toUpperCase()}</div>
+			<div class="wiz-day-num">${d.format('D')}</div>
+			<div class="wiz-day-mon">${d.locale('es').format('MMM').replace('.', '')}</div>
+		</div>`;
+	}
+
+	// Cambiar título del offcanvas
+	$('#tituloGeneral1').text('Editar Reserva');
+
+	$('#contenidoGeneral1').html(`
+		<div class="res-edit-form" id="resEditForm"
+			data-id="${id}"
+			data-empleado="${res.ID_EMPLEADO}"
+			data-cliente="${res.ID_CLIENTE}"
+			data-servicio="${res.ID_SERVICIO_SUCURSAL}"
+			data-hora="${moment(res.FECHA_RESERVA).format('HH:mm')}">
+
+			<div class="res-edit-section-lbl"><i class="las la-calendar-alt"></i> Fecha</div>
+			<div class="wiz-day-strip-wrap">
+				<div class="wiz-day-strip" id="editDayStrip">${daysHtml}</div>
+			</div>
+
+			<div class="res-edit-section-lbl" style="margin-top:14px"><i class="las la-clock"></i> Horario</div>
+			<div id="editTimeGrid"><div class="wiz-time-empty"><i class="las la-spinner la-spin"></i> Cargando...</div></div>
+
+			<div class="res-edit-section-lbl" style="margin-top:14px"><i class="las la-comment-alt"></i> Notas</div>
+			<textarea id="editComentario" class="res-edit-textarea" placeholder="Notas opcionales...">${res.COMENTARIO || ''}</textarea>
+
+			<button class="res-btn-guardar" onclick="guardarCambiosReserva()">
+				<i class="las la-check-circle"></i> Guardar cambios
+			</button>
+		</div>
+	`);
+
+	// Auto-scroll al día seleccionado
+	setTimeout(() => {
+		const sel = document.querySelector('#editDayStrip .wiz-day-item.selected');
+		if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+	}, 80);
+
+	// Día click
+	$('#contenidoGeneral1').off('click', '.wiz-day-item').on('click', '.wiz-day-item', async function () {
+		$('#editDayStrip .wiz-day-item').removeClass('selected');
+		$(this).addClass('selected');
+		$('#resEditForm').data('hora', '');
+		await _editLoadTimes($(this).data('date'), res.ID_EMPLEADO);
 	});
 
-	const servicio = await axios.get("/api/serviciosucursal/listar/0/"+verSesion(),{ 
-		headers:{
-			authorization: `Bearer ${verToken()}`
-		} 
-	});
+	_editLoadTimes(fechaEdit.format('YYYY-MM-DD'), res.ID_EMPLEADO, moment(res.FECHA_RESERVA).format('HH:mm'));
+}
+
+async function _editLoadTimes(dateStr, empleadoId, horaPresel) {
+	$('#editTimeGrid').html('<div class="wiz-time-empty"><i class="las la-spinner la-spin"></i> Cargando...</div>');
+	try {
+		const fmt = moment(dateStr).format('DD-MM-YYYY');
+		const [rHoras, rHorario] = await Promise.all([
+			axios.get(`/api/reserva/listar/hora/${empleadoId}/${fmt}/${verSesion()}`, { headers: { authorization: `Bearer ${verToken()}` } }),
+			axios.get(`/api/parametro/detalle/listar/62/${verSesion()}`,              { headers: { authorization: `Bearer ${verToken()}` } })
+		]);
+
+		const ocupadas = (rHoras.data.valor.info || []).map(r => r.HORA);
+		const horarios = (rHorario.data.valor.info || []).filter(h => h.ES_VIGENTE == 1);
+
+		if (!horarios.length) {
+			$('#editTimeGrid').html('<div class="wiz-time-empty">No hay horarios configurados</div>');
+			return;
+		}
+
+		const slots = horarios.map(h => {
+			const hora = h.DESCRIPCIONDETALLE;
+			// La hora actual de la reserva NO cuenta como ocupada
+			const ocu  = ocupadas.includes(hora) && hora !== horaPresel;
+			const sel  = hora === (horaPresel || '') ? ' selected' : '';
+			const dis  = ocu ? ' disabled' : '';
+			return `<div class="wiz-time-slot${sel}${dis}" data-hora="${hora}">${hora}</div>`;
+		}).join('');
+
+		$('#editTimeGrid').html(`<div class="wiz-time-grid">${slots}</div>`);
+
+		$('#editTimeGrid').off('click', '.wiz-time-slot').on('click', '.wiz-time-slot', function () {
+			$('.wiz-time-slot').removeClass('selected');
+			$(this).addClass('selected');
+			$('#resEditForm').data('hora', $(this).data('hora'));
+		});
+
+		// Registrar la hora pre-seleccionada en data
+		if (horaPresel) $('#resEditForm').data('hora', horaPresel);
+
+	} catch (err) {
+		$('#editTimeGrid').html('<div class="wiz-time-empty">Error al cargar horarios</div>');
+	}
+}
+
+async function guardarCambiosReserva() {
+	const $form    = $('#resEditForm');
+	const id       = $form.data('id');
+	const empleado = $form.data('empleado');
+	const cliente  = $form.data('cliente');
+	const servicio = $form.data('servicio');
+	const hora     = $form.data('hora') || $('#editTimeGrid .wiz-time-slot.selected').data('hora');
+	const fecha    = $('#editDayStrip .wiz-day-item.selected').data('date');
+	const coment   = $('#editComentario').val();
+
+	if (!fecha) { Swal.fire({ icon: 'warning', title: 'Selecciona una fecha', timer: 2000, showConfirmButton: false, toast: true, position: 'top' }); return; }
+	if (!hora)  { Swal.fire({ icon: 'warning', title: 'Selecciona un horario', timer: 2000, showConfirmButton: false, toast: true, position: 'top' }); return; }
+
+	bloquea();
+	try {
+		const fd = new FormData();
+		fd.append('id',           id);
+		fd.append('cliente',      cliente);
+		fd.append('empleado',     empleado);
+		fd.append('servicio',     servicio);
+		fd.append('fechaReserva', moment(fecha).format('DD-MM-YYYY'));
+		fd.append('horaReserva',  hora);
+		fd.append('comentario',   coment || '');
+		fd.append('sesId',        verSesion());
+
+		const r = await axios.put(`/api/reserva/editar/${id}`, fd, {
+			headers: { authorization: `Bearer ${verToken()}` }
+		});
+		desbloquea();
+
+		const resp = r.data.valor;
+		if (resp.resultado) {
+			cerrar_general1();
+			await refrescarCalendario();
+		} else {
+			mensajeSistema(resp.mensaje);
+		}
+	} catch (err) {
+		desbloquea();
+		mensajeError(err.response ? err.response.data.error : err);
+	}
+}
+
+// ═══════════════════════════════════════════
+//  WIZARD — NUEVA RESERVA
+// ═══════════════════════════════════════════
+
+function _wizReset(fecha) {
+	_wiz = {
+		step: 1,
+		tipo: null,
+		servicioId: null, servicioNombre: '', servicioDur: '',
+		barberoId: null, barberoNombre: '',
+		fecha: fecha || moment().format('YYYY-MM-DD'),
+		hora: null,
+		clienteId: null, clienteNombre: '',
+		comentario: ''
+	};
+}
+
+async function nuevaReservaFecha(dateStr) {
+	_wizReset(dateStr);
+	bloquea();
+
+	const diaSemana = moment(dateStr).isoWeekday();
+
+	try {
+		const [rServicio, rEmpleado, rCliente] = await Promise.all([
+			axios.get(`/api/serviciosucursal/listar/0/${verSesion()}`, { headers: { authorization: `Bearer ${verToken()}` } }),
+			axios.get(`/api/empleado/listar/0/${verSesion()}`,         { headers: { authorization: `Bearer ${verToken()}` } }),
+			axios.get(`/api/cliente/listar/0/${verSesion()}`,          { headers: { authorization: `Bearer ${verToken()}` } })
+				.catch(() => ({ data: { valor: { info: [] } } }))
+		]);
+
+		_wizData.servicios = (rServicio.data.valor.info || []).filter(s => s.ES_VIGENTE == 1);
+		_wizData.barberos  = (rEmpleado.data.valor.info || []).filter(e => {
+			if (e.ES_VIGENTE != 1) return false;
+			const d = e.ID_DESCANSO ? e.ID_DESCANSO.split(',').map(Number) : [];
+			return !d.includes(diaSemana);
+		});
+		_wizData.clientes = rCliente.data.valor.info || [];
+
+		// Fallback: at least one client
+		if (!_wizData.clientes.length) {
+			try {
+				const rb = await axios.get(`/api/cliente/buscar/${verSesion()}/${verSesion()}`, {
+					headers: { authorization: `Bearer ${verToken()}` }
+				});
+				const c = rb.data.valor.info;
+				if (c && c.ID_CLIENTE) _wizData.clientes = [c];
+			} catch (e2) { /* empty is OK */ }
+		}
+
+	} catch (err) {
+		desbloquea();
+		mensajeError((err.response) ? err.response.data.error : err);
+		return;
+	}
 
 	desbloquea();
-	const resp=cliente.data.valor.info;
-	const resp2=empleado.data.valor.info;
-	const resp3=servicio.data.valor.info;
 
-	let fecha=moment(objeto.fecha).isoWeekday();
-
-	let listado=`<form id="${objeto.tabla}">
-					<span class='oculto muestraId'>0</span>
-					<span class='oculto muestraNombre'></span>
-					<div class="row pt-3">
-						<div class="form-group col-md-6">
-							<label>Cliente (*)</label>
-							<select name="cliente" class="form-control select2 muestraMensaje">
-								<option value="${resp.ID_CLIENTE}">${resp.APELLIDO_PATERNO+" "+resp.APELLIDO_MATERNO+" "+resp.NOMBRE}</option>			
-							</select>
-							<div class="vacio oculto">¡Campo obligatorio!</div>
-						</div>
-						<div class="form-group col-md-6">
-							<label>Colaborador (*)</label>
-							<select name="empleado" class="form-control select2">
-								<option value="">Select...</option>`;
-								for(var i=0;i<resp2.length;i++){
-									if(resp2[i].ES_VIGENTE==1){
-										let arrDescanso=(resp2[i].ID_DESCANSO!==null)?resp2[i].ID_DESCANSO.split(",").map(Number):[]; 
-										if(!arrDescanso.includes(fecha)){
-								listado+=`<option value="${resp2[i].ID_EMPLEADO}">${resp2[i].APELLIDO_PATERNO+" "+resp2[i].APELLIDO_MATERNO+" "+resp2[i].NOMBRE}</option>`;
-										}
-									}
-								}
-					listado+=`</select>
-							<div class="vacio oculto">¡Campo obligatorio!</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="form-group col-md-6">
-							<label>Servicio (*)</label>
-							<select name="servicio" class="form-control select2">
-								<option value="">Select...</option>`;
-								for(var i=0;i<resp3.length;i++){
-									if(resp3[i].ES_VIGENTE==1){
-								listado+=`<option value="${resp3[i].ID_SERVICIO_SUCURSAL}">${resp3[i].NOMBRE+((resp3[i].DESCRIPCION===null)?'':" - "+resp3[i].DESCRIPCION)}</option>`;
-									}
-								}
-					listado+=`</select>
-							<div class="vacio oculto">¡Campo obligatorio!</div>
-						</div>
-						<div class="form-group col-md-6">
-							<label>Hora reserva (*)</label>
-							<select id="horaReserva" name="horaReserva" class="form-control select2">
-								<option value="">Select...</option>
-							</select>
-							<input value="" id="fechaReserva" name="fechaReserva" maxlength="10" type="hidden">
-							<div class="vacio oculto">¡Campo obligatorio!</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="form-group col-md-12">
-							<label>Comentario</label>
-							<input name="comentario" autocomplete="off" maxlength="250" type="text" class="form-control p-1" placeholder="Ingrese un comentario">
-						</div>
-					</div>
-					<div class="pt-3 col-md-12 pl-0 pr-0 text-center">
-						${limpia()+quitar()+guarda()}
-					</div>
-					<div class="h8 text-center pt-2">(*) Los campos con asteriso son obligatorios.</div>
-				</form>`;
-			mostrar_general1({titulo:'RESERVA: '+moment(objeto.fecha).format('DD-MM-YYYY'),msg:listado,ancho:600});
-			$('#'+objeto.tabla+' #fechaReserva').val(moment(objeto.fecha).format('DD-MM-YYYY'))
-			$(".select2").select2({
-				placeholder:'Select...',
-				dropdownAutoWidth: true,
-				width: '100%',
-				dropdownParent: $('#general1')
-			});
-			$('.datepicker').datepicker({
-				language: 'es',
-				inline: true,
-				changeMonth: true,
-				changeYear: true,
-				todayHighlight: true,
-				container: "#general1",
-			}).on('changeDate', function(e){
-				$(this).datepicker('hide');
-			});
-		
-			objeto.cliente=$('#'+objeto.tabla+' select[name=cliente]');
-			objeto.empleado=$('#'+objeto.tabla+' select[name=empleado]');
-			objeto.servicio=$('#'+objeto.tabla+' select[name=servicio]');
-			objeto.fechaReserva=$('#'+objeto.tabla+' input[name=fechaReserva]');
-			objeto.horaReserva=$('#'+objeto.tabla+' select[name=horaReserva]');
-			objeto.comentario=$('#'+objeto.tabla+' input[name=comentario]');
-			
-			eventosReserva(objeto);
-}
-
-function activarCalendario(objeto){
-	var calendarEl = document.getElementById('calendar');
-	var calendar = new FullCalendar.Calendar(calendarEl, {
-		height: 'auto',
-		windowResizeDelay: 100,
-		locale: 'es',
-		timezone: 'America/Lima',
-		windowResize: function(arg) {
-			if (window.innerWidth < 768) {
-				calendar.changeView('listWeek');
-			} else {
-				calendar.changeView('dayGridMonth');
-			}
-		},
-		headerToolbar: {
-			left: 'prev,next,today',
-			center: 'title',
-			right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
-		},
-		initialView: 'dayGridMonth',
-		editable:true,
-		dateClick: async function(info){
-			if(info.dateStr >= moment().format('YYYY-MM-DD')){
-				objeto.fecha=info.dateStr;
-				await formularioCalendario(objeto);
-				$("#"+objeto.tabla+" span#botonGuardar").text('Crear');
-				$("#"+objeto.tabla+" button[name=btnLimpia]").removeClass('oculto');
-				$("#"+objeto.tabla+" button[name=btnQuitar]").addClass('oculto');
-			}
-		},
-		eventClick: async function(info){
-			if(info.event.startStr >= moment().format('YYYY-MM-DD')){
-				let id=info.event.id;
-				let nombre=info.event.extendedProps.clientePaterno+" "+info.event.extendedProps.clienteNombres;
-				objeto.id=id;
-				objeto.fecha=info.event.startStr
-				await formularioCalendario(objeto);
-				$("#"+objeto.tabla+" span.muestraId").text(id);
-				$("#"+objeto.tabla+" span.muestraNombre").text(nombre);
-				$("#"+objeto.tabla+" span#botonGuardar").text('Modificar');
-				$("#"+objeto.tabla+" button[name=btnLimpia]").addClass('oculto');
-				$("#"+objeto.tabla+" button[name=btnQuitar]").removeClass('oculto');
-				reservaEdita(objeto);
-			}
-		},
-		eventDrop: function(info){
-			// Validar si ya existe una reserva en la nueva fecha
-			if (validarConflictoReserva(info.event, calendar)) {
-				error('¡Ya existe un registro con esos datos!');
-				
-				// Revertir el evento a su posición original
-				info.revert();
-				return false;
-			}
-			let id=info.event.id;
-			let fecha=info.event.startStr;
-			enviaFormularioReservaDD({id:id,fecha:fecha, tabla:objeto.tabla});
-		},
-		events: async function(info, successCallback, failureCallback) {
-			const lista= await axios.get('/api/'+objeto.tabla+'/listar/0/'+verSesion(),{
-				headers: 
-				{ 
-					authorization: `Bearer ${verToken()}`
-				} 
-			});
-			let data=lista.data.valor.info;
-			let evento = data.map(function (event){
-				let startDate = new Date(event.FECHA_RESERVA);
-				let endDate = new Date(startDate);
-    			endDate.setHours(23, 59, 59, 999);
-				return {
-					title:'Reserva',
-					start:startDate.toISOString(),
-					end:endDate.toISOString(),
-					location:event.COMENTARIO,
-					id: event.ID_RESERVA,
-					backgroundColor: event.COLOR,
-					extendedProps: {
-						barberoPaterno: event.PATERNO_EMPLEADO,
-						barberoMaterno: event.MATERNO_EMPLEADO,
-						barberoNombres: event.NOMBRE_EMPLEADO,
-						clientePaterno: event.PATERNO_CLIENTE,
-						clienteMaterno: event.MATERNO_CLIENTE,
-						clienteNombres: event.NOMBRE_CLIENTE,
-						servicioReserva: event.NOMBRE+((event.DESCRIPCION===null)?'':" - "+event.DESCRIPCION),
-						color:event.COLOR
-					}
-				}
-			});
-			
-			successCallback(evento);
-		},
-		eventContent: function(info){
-			let color=getContrastColor(info.event.backgroundColor) 
-			return {
-				html:`
-					<div class="cursor m-auto overflow-hidden" style="background-color: ${info.event.backgroundColor};padding: 5px; border-radius: 5px;color: ${color};width:100%;border:1px solid #000000;">
-						<div>${info.event.extendedProps.clientePaterno+" "+info.event.extendedProps.clienteNombres}</div>
-						<div>${moment(info.event.start).format('HH:mm')}</div>
-					</div>`
-			}
-		},
-		eventMouseEnter: function(mouseEnterInfo){
-			let el = mouseEnterInfo.el;
-			//el.classList.add("relative");
-
-			//let newEl = document.createElement("div");
-            let newElTitulo = mouseEnterInfo.event.title;
-            let newElHora = moment(mouseEnterInfo.event.startStr).format('HH:mm');
-			let newElComentario = (mouseEnterInfo.event.extendedProps.location===null)?'-':mouseEnterInfo.event.extendedProps.location;
-			let newElClienteApellido = mouseEnterInfo.event.extendedProps.clientePaterno+ " "+mouseEnterInfo.event.extendedProps.clienteMaterno;
-			let newElClienteNombres = mouseEnterInfo.event.extendedProps.clienteNombres;
-			let newElBarberApellido = mouseEnterInfo.event.extendedProps.barberoPaterno+" "+mouseEnterInfo.event.extendedProps.barberoMaterno;
-			let newElBarberNombres = mouseEnterInfo.event.extendedProps.barberoNombres;
-			let newElServicioReserva = mouseEnterInfo.event.extendedProps.servicioReserva
-
-			//newEl.innerHTML = `
-			let tooltipContent = `
-                <div style="font-size: 12px;">
-                    <div><strong>${newElTitulo}: ${newElHora}</strong></div>
-					<div><strong>Cliente:</strong> ${newElClienteApellido+" "+newElClienteNombres}</div>
-					<div><strong>Colaborador:</strong> ${newElBarberApellido+" "+newElBarberNombres}</div>
-					<div><strong>Servicio:</strong> ${newElServicioReserva}</div>
-					<div><strong>Comentario:</strong> ${newElComentario}</div>
-                </div>`
-
-				tippy(el, {
-					content: tooltipContent, // Contenido del tooltip
-					allowHTML: true, // Permite contenido HTML
-					theme: 'light', // Tema
-					placement: 'top', // Posición del tooltip
-					animation: 'scale', // Animación
-					duration: [200, 150], // Duración de la animación [entrada, salida]
-					offset: [0, 10], // Espaciado entre el elemento y el tooltip
-				});
-            
-		},
-		eventMouseLeave: function(mouseLeaveInfo){
-			/*let tooltip = document.querySelector(".fc-hoverable-event");
-			if (tooltip) tooltip.remove();*/
-			let el = mouseLeaveInfo.el;
-			if (el._tippy) {
-				el._tippy.destroy(); // Elimina el tooltip asociado al elemento
-			}
-        }
-	  
+	mostrar_general1({
+		titulo: 'Nueva Reserva',
+		msg: `<div class="wiz-container" id="wizContainer">
+			<div id="wizStepsBar"></div>
+			<div id="wizContent" class="wiz-content"></div>
+			<div id="wizNav"></div>
+		</div>`
 	});
 
-	calendar.render();
+	_wizRenderStep();
 }
 
-// VERSIÓN ALTERNATIVA CON VALIDACIÓN DE HORA (si también necesitas validar hora específica)
-function validarConflictoReserva(eventoMovido, calendar) {
-	const todosLosEventos = calendar.getEvents();
-	
-	const inicioMovido = new Date(eventoMovido.start);
-	const finMovido = new Date(eventoMovido.end || eventoMovido.start);
-	
-	for (let evento of todosLosEventos) {
-		if (evento.id === eventoMovido.id) {
-			continue;
+// ── Render principal del paso ──
+function _wizRenderStep() {
+	_wizRenderBar();
+	switch (_wiz.step) {
+		case 1: _wizStep1(); break;
+		case 2: _wizStep2(); break;
+		case 3: _wizStep3(); break;
+		case 4: _wizStep4(); break;
+		case 5: _wizStep5(); break;
+	}
+	_wizRenderNav();
+}
+
+function _wizRenderBar() {
+	let html = '';
+	for (let i = 1; i <= 5; i++) {
+		const done   = i < _wiz.step;
+		const active = i === _wiz.step;
+		const cls    = done ? 'done' : active ? 'active' : '';
+		const lbl    = done ? '<i class="las la-check"></i>' : i;
+		html += `<div class="wiz-step-dot ${cls}">${lbl}</div>`;
+		if (i < 5) html += `<div class="wiz-step-line ${done ? 'done' : ''}"></div>`;
+	}
+	$('#wizStepsBar').html(`<div class="wiz-steps-bar">${html}</div>`);
+}
+
+function _wizRenderNav() {
+	const isFirst = _wiz.step === 1;
+	const isLast  = _wiz.step === 5;
+	const back    = isFirst ? '' : `<button class="wiz-btn-back" onclick="_wizBack()">← Atrás</button>`;
+	const nextLbl = isLast ? 'Confirmar ✓' : 'Continuar →';
+	$('#wizNav').html(`<div class="wiz-nav">${back}<button class="wiz-btn-next" onclick="_wizNext()">${nextLbl}</button></div>`);
+}
+
+// ── Paso 1: Tipo de cliente ──
+function _wizStep1() {
+	$('#wizContent').html(`
+		<div class="wiz-step-label">¿Para quién es la cita?</div>
+		<div class="wiz-step-sub">Selecciona el tipo de cliente</div>
+		<div class="wiz-tipo-grid">
+			<div class="wiz-tipo-card${_wiz.tipo === 'adulto' ? ' selected' : ''}" data-tipo="adulto">
+				<div class="wiz-tipo-emoji">🧔</div>
+				<div class="wiz-tipo-name">Adulto</div>
+			</div>
+			<div class="wiz-tipo-card${_wiz.tipo === 'menor' ? ' selected' : ''}" data-tipo="menor">
+				<div class="wiz-tipo-emoji">👦</div>
+				<div class="wiz-tipo-name">Menor</div>
+			</div>
+		</div>
+	`);
+	$('#wizContent').off('click', '.wiz-tipo-card').on('click', '.wiz-tipo-card', function () {
+		$('.wiz-tipo-card').removeClass('selected');
+		$(this).addClass('selected');
+		_wiz.tipo = $(this).data('tipo');
+	});
+}
+
+// ── Paso 2: Servicio ──
+function _wizStep2() {
+	const cards = _wizData.servicios.map(s => {
+		const sel  = s.ID_SERVICIO_SUCURSAL == _wiz.servicioId ? ' selected' : '';
+		const desc = s.DESCRIPCION ? `<div class="wiz-service-dur">${s.DESCRIPCION}</div>` : '';
+		return `<div class="wiz-service-card${sel}"
+			data-id="${s.ID_SERVICIO_SUCURSAL}" data-nombre="${s.NOMBRE}" data-dur="${s.DURACION || ''}">
+			<div class="wiz-service-icon"><i class="las la-cut"></i></div>
+			<div class="wiz-service-name">${s.NOMBRE}</div>${desc}
+		</div>`;
+	}).join('') || '<p class="wiz-empty-msg">No hay servicios disponibles</p>';
+
+	$('#wizContent').html(`
+		<div class="wiz-step-label">¿Qué servicio necesitas?</div>
+		<div class="wiz-step-sub">Elige el servicio para tu cita</div>
+		<div class="wiz-service-grid">${cards}</div>
+	`);
+	$('#wizContent').off('click', '.wiz-service-card').on('click', '.wiz-service-card', function () {
+		$('.wiz-service-card').removeClass('selected');
+		$(this).addClass('selected');
+		_wiz.servicioId    = $(this).data('id');
+		_wiz.servicioNombre = $(this).data('nombre');
+		_wiz.servicioDur   = $(this).data('dur');
+	});
+}
+
+// ── Paso 3: Barbero ──
+function _wizStep3() {
+	const items = _wizData.barberos.map(b => {
+		const sel    = b.ID_EMPLEADO == _wiz.barberoId ? ' selected' : '';
+		const nombre = `${b.APELLIDO_PATERNO || ''} ${b.APELLIDO_MATERNO || ''} ${b.NOMBRE || ''}`.replace(/\s+/g, ' ').trim();
+		const init   = ((b.APELLIDO_PATERNO || '')[0] || '').toUpperCase() + ((b.NOMBRE || '')[0] || '').toUpperCase();
+		return `<div class="wiz-barber-item${sel}" data-id="${b.ID_EMPLEADO}" data-nombre="${nombre}">
+			<div class="wiz-barber-avatar">${init}</div>
+			<div class="wiz-barber-info">
+				<div class="wiz-barber-name">${nombre}</div>
+				<div class="wiz-barber-role">Barbero</div>
+			</div>
+			<i class="las la-check-circle wiz-barber-check"></i>
+		</div>`;
+	}).join('') || '<p class="wiz-empty-msg">No hay barberos disponibles para este día</p>';
+
+	$('#wizContent').html(`
+		<div class="wiz-step-label">Elige tu barbero</div>
+		<div class="wiz-step-sub">Selecciona el profesional para tu cita</div>
+		<div class="wiz-barber-list">${items}</div>
+	`);
+	$('#wizContent').off('click', '.wiz-barber-item').on('click', '.wiz-barber-item', function () {
+		$('.wiz-barber-item').removeClass('selected');
+		$(this).addClass('selected');
+		_wiz.barberoId     = $(this).data('id');
+		_wiz.barberoNombre = $(this).data('nombre');
+	});
+}
+
+// ── Paso 4: Fecha y hora ──
+function _wizStep4() {
+	const today = moment();
+	const fm    = moment(_wiz.fecha);
+	if (fm.isBefore(today, 'day') || fm.diff(today, 'days') >= 14) {
+		_wiz.fecha = today.format('YYYY-MM-DD');
+	}
+
+	let daysHtml = '';
+	for (let i = 0; i < 14; i++) {
+		const d   = today.clone().add(i, 'days');
+		const ds  = d.format('YYYY-MM-DD');
+		const sel = ds === _wiz.fecha ? ' selected' : '';
+		daysHtml += `<div class="wiz-day-item${sel}" data-date="${ds}">
+			<div class="wiz-day-dow">${d.locale('es').format('ddd').replace('.', '').toUpperCase()}</div>
+			<div class="wiz-day-num">${d.format('D')}</div>
+			<div class="wiz-day-mon">${d.locale('es').format('MMM').replace('.', '')}</div>
+		</div>`;
+	}
+
+	$('#wizContent').html(`
+		<div class="wiz-step-label">Elige fecha y hora</div>
+		<div class="wiz-step-sub">Próximos días disponibles</div>
+		<div class="wiz-day-strip-wrap">
+			<div class="wiz-day-strip" id="wizDayStrip">${daysHtml}</div>
+		</div>
+		<div class="wiz-time-section-lbl"><i class="las la-clock"></i> Horarios disponibles</div>
+		<div id="wizTimeGrid"><div class="wiz-time-empty"><i class="las la-spinner la-spin"></i> Cargando...</div></div>
+	`);
+
+	setTimeout(() => {
+		const sel = document.querySelector('#wizDayStrip .wiz-day-item.selected');
+		if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+	}, 80);
+
+	$('#wizContent').off('click', '.wiz-day-item').on('click', '.wiz-day-item', async function () {
+		$('.wiz-day-item').removeClass('selected');
+		$(this).addClass('selected');
+		_wiz.fecha = $(this).data('date');
+		_wiz.hora  = null;
+		await _wizLoadTimes(_wiz.fecha);
+	});
+
+	_wizLoadTimes(_wiz.fecha);
+}
+
+async function _wizLoadTimes(dateStr) {
+	$('#wizTimeGrid').html('<div class="wiz-time-empty"><i class="las la-spinner la-spin"></i> Cargando...</div>');
+	try {
+		const fmt = moment(dateStr).format('DD-MM-YYYY');
+		const [rHoras, rHorario] = await Promise.all([
+			axios.get(`/api/reserva/listar/hora/${_wiz.barberoId}/${fmt}/${verSesion()}`, { headers: { authorization: `Bearer ${verToken()}` } }),
+			axios.get(`/api/parametro/detalle/listar/62/${verSesion()}`,                  { headers: { authorization: `Bearer ${verToken()}` } })
+		]);
+
+		const ocupadas = (rHoras.data.valor.info || []).map(r => r.HORA);
+		const horarios = (rHorario.data.valor.info || []).filter(h => h.ES_VIGENTE == 1);
+
+		if (!horarios.length) {
+			$('#wizTimeGrid').html('<div class="wiz-time-empty">No hay horarios configurados</div>');
+			return;
 		}
-		
-		const inicioExistente = new Date(evento.start);
-		const finExistente = new Date(evento.end || evento.start);
-		
-		// Verificar solapamiento de horarios
-		if (inicioMovido < finExistente && inicioExistente < finMovido) {
-			return true; // Hay conflicto
+
+		const slots = horarios.map(h => {
+			const hora = h.DESCRIPCIONDETALLE;
+			const ocu  = ocupadas.includes(hora);
+			const sel  = hora === _wiz.hora ? ' selected' : '';
+			const dis  = ocu ? ' disabled' : '';
+			return `<div class="wiz-time-slot${sel}${dis}" data-hora="${hora}">${hora}</div>`;
+		}).join('');
+
+		$('#wizTimeGrid').html(`<div class="wiz-time-grid">${slots}</div>`);
+
+		$('#wizTimeGrid').off('click', '.wiz-time-slot').on('click', '.wiz-time-slot', function () {
+			$('.wiz-time-slot').removeClass('selected');
+			$(this).addClass('selected');
+			_wiz.hora = $(this).data('hora');
+		});
+
+	} catch (err) {
+		$('#wizTimeGrid').html('<div class="wiz-time-empty">Error al cargar horarios</div>');
+	}
+}
+
+// ── Paso 5: Cliente ──
+function _wizStep5() {
+	const clientes = _wizData.clientes;
+
+	const buildList = (list) => {
+		if (!list.length) return '<p class="wiz-empty-msg">Sin resultados</p>';
+		return list.slice(0, 40).map(c => {
+			const nom = `${c.APELLIDO_PATERNO || ''} ${c.APELLIDO_MATERNO || ''} ${c.NOMBRE || ''}`.replace(/\s+/g, ' ').trim();
+			const sel = c.ID_CLIENTE == _wiz.clienteId ? ' selected' : '';
+			const ini = ((c.APELLIDO_PATERNO || '')[0] || '').toUpperCase() + ((c.NOMBRE || '')[0] || '').toUpperCase();
+			return `<div class="wiz-client-item${sel}" data-id="${c.ID_CLIENTE}" data-nombre="${nom}">
+				<div class="wiz-client-avatar">${ini}</div>
+				<div class="wiz-client-info">
+					<div class="wiz-client-name">${nom}</div>
+					${c.TELEFONO ? `<div class="wiz-client-phone">${c.TELEFONO}</div>` : ''}
+				</div>
+				<i class="las la-check-circle wiz-client-check"></i>
+			</div>`;
+		}).join('');
+	};
+
+	$('#wizContent').html(`
+		<div class="wiz-step-label">Datos del cliente</div>
+		<div class="wiz-step-sub">Selecciona o busca el cliente</div>
+		<div class="wiz-client-search">
+			<i class="las la-search" style="color:var(--md-on-surface-var);font-size:18px;flex-shrink:0"></i>
+			<input type="text" id="wizClientSearch" placeholder="Buscar por nombre o teléfono...">
+		</div>
+		<div id="wizClientList" class="wiz-client-list">${buildList(clientes)}</div>
+		<div class="wiz-field-group" style="margin-top:14px">
+			<div class="wiz-field-label"><i class="las la-comment-alt"></i> Comentario</div>
+			<input type="text" id="wizComentario" class="wiz-field-input" placeholder="Opcional..." value="${_wiz.comentario || ''}">
+		</div>
+	`);
+
+	$('#wizClientSearch').on('input', function () {
+		const q = $(this).val().toLowerCase().trim();
+		const filtered = !q ? clientes : clientes.filter(c => {
+			const nom = `${c.APELLIDO_PATERNO || ''} ${c.APELLIDO_MATERNO || ''} ${c.NOMBRE || ''}`.toLowerCase();
+			return nom.includes(q) || (c.TELEFONO || '').includes(q);
+		});
+		$('#wizClientList').html(buildList(filtered));
+	});
+
+	$(document).off('click', '.wiz-client-item').on('click', '.wiz-client-item', function () {
+		$('.wiz-client-item').removeClass('selected');
+		$(this).addClass('selected');
+		_wiz.clienteId     = $(this).data('id');
+		_wiz.clienteNombre = $(this).data('nombre');
+	});
+}
+
+// ── Navegación ──
+function _wizBack() {
+	if (_wiz.step > 1) { _wiz.step--; _wizRenderStep(); }
+}
+
+async function _wizNext() {
+	const toast = (msg) => Swal.fire({
+		icon: 'warning', title: msg, timer: 2000,
+		showConfirmButton: false, toast: true, position: 'top'
+	});
+
+	switch (_wiz.step) {
+		case 1:
+			if (!_wiz.tipo)       { toast('Selecciona el tipo de cliente'); return; }
+			break;
+		case 2:
+			if (!_wiz.servicioId) { toast('Selecciona un servicio'); return; }
+			break;
+		case 3:
+			if (!_wiz.barberoId)  { toast('Selecciona un barbero'); return; }
+			break;
+		case 4:
+			if (!_wiz.fecha)      { toast('Selecciona una fecha'); return; }
+			if (!_wiz.hora)       { toast('Selecciona una hora disponible'); return; }
+			break;
+		case 5:
+			_wiz.comentario = $('#wizComentario').val();
+			if (!_wiz.clienteId)  { toast('Selecciona un cliente de la lista'); return; }
+			await _wizEnviar();
+			return;
+	}
+	_wiz.step++;
+	_wizRenderStep();
+}
+
+async function _wizEnviar() {
+	bloquea();
+	try {
+		const fd = new FormData();
+		fd.append('id',           0);
+		fd.append('cliente',      _wiz.clienteId);
+		fd.append('empleado',     _wiz.barberoId);
+		fd.append('servicio',     _wiz.servicioId);
+		fd.append('fechaReserva', moment(_wiz.fecha).format('DD-MM-YYYY'));
+		fd.append('horaReserva',  _wiz.hora);
+		fd.append('comentario',   _wiz.comentario || '');
+		fd.append('sesId',        verSesion());
+
+		const r = await axios.post('/api/reserva/crear', fd, {
+			headers: { authorization: `Bearer ${verToken()}` }
+		});
+		desbloquea();
+
+		const resp = r.data.valor;
+		if (resp.resultado) {
+			_wizShowSuccess();
+			await refrescarCalendario();
+		} else {
+			mensajeSistema(resp.mensaje);
+		}
+	} catch (err) {
+		desbloquea();
+		mensajeError((err.response) ? err.response.data.error : err);
+	}
+}
+
+function _wizShowSuccess() {
+	const fl      = moment(_wiz.fecha).locale('es').format('D [de] MMMM [de] YYYY');
+	const fechaLbl = fl.charAt(0).toUpperCase() + fl.slice(1);
+
+	$('#wizStepsBar, #wizNav').html('');
+	$('#wizContent').html(`
+		<div class="wiz-success">
+			<div class="wiz-success-icon"><i class="las la-check"></i></div>
+			<div class="wiz-success-title">¡Reserva creada!</div>
+			<div class="wiz-success-sub">Tu reserva ha sido confirmada.</div>
+			<div class="wiz-success-summary">
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Servicio</span>
+					<span class="wiz-sum-val">${_wiz.servicioNombre}</span>
+				</div>
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Barbero</span>
+					<span class="wiz-sum-val">${_wiz.barberoNombre}</span>
+				</div>
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Fecha</span>
+					<span class="wiz-sum-val">${fechaLbl}</span>
+				</div>
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Hora</span>
+					<span class="wiz-sum-val">${_wiz.hora}</span>
+				</div>
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Cliente</span>
+					<span class="wiz-sum-val">${_wiz.clienteNombre}</span>
+				</div>
+			</div>
+			<button class="wiz-btn-primary" onclick="cerrar_general1()">
+				<i class="las la-calendar-check"></i> Volver al calendario
+			</button>
+		</div>
+	`);
+}
+
+// ═══════════════════════════════════════════
+//  FORMULARIO EDICIÓN (offcanvas, para editar)
+// ═══════════════════════════════════════════
+async function formularioCalendario(objeto) {
+	bloquea();
+	const [rCliente, rEmpleado, rServicio] = await Promise.all([
+		axios.get("/api/cliente/buscar/"    + verSesion() + "/" + verSesion(), { headers: { authorization: `Bearer ${verToken()}` } }),
+		axios.get("/api/empleado/listar/0/" + verSesion(),                     { headers: { authorization: `Bearer ${verToken()}` } }),
+		axios.get("/api/serviciosucursal/listar/0/" + verSesion(),             { headers: { authorization: `Bearer ${verToken()}` } }),
+	]);
+	desbloquea();
+
+	const resp  = rCliente.data.valor.info;
+	const resp2 = rEmpleado.data.valor.info;
+	const resp3 = rServicio.data.valor.info;
+	const diaSemana = moment(objeto.fecha).isoWeekday();
+
+	let optsEmpleado = `<option value="">Seleccionar...</option>`;
+	for (let i = 0; i < resp2.length; i++) {
+		if (resp2[i].ES_VIGENTE == 1) {
+			const descanso = (resp2[i].ID_DESCANSO !== null) ? resp2[i].ID_DESCANSO.split(',').map(Number) : [];
+			if (!descanso.includes(diaSemana)) {
+				optsEmpleado += `<option value="${resp2[i].ID_EMPLEADO}">${resp2[i].APELLIDO_PATERNO + ' ' + resp2[i].APELLIDO_MATERNO + ' ' + resp2[i].NOMBRE}</option>`;
+			}
 		}
 	}
-	
-	return false; // No hay conflicto
+
+	let optsServicio = `<option value="">Seleccionar...</option>`;
+	for (let i = 0; i < resp3.length; i++) {
+		if (resp3[i].ES_VIGENTE == 1) {
+			optsServicio += `<option value="${resp3[i].ID_SERVICIO_SUCURSAL}">${resp3[i].NOMBRE + ((resp3[i].DESCRIPCION === null) ? '' : ' - ' + resp3[i].DESCRIPCION)}</option>`;
+		}
+	}
+
+	const listado = `<form id="${objeto.tabla}">
+		<span class='oculto muestraId'>0</span>
+		<span class='oculto muestraNombre'></span>
+
+		<div class="form-group">
+			<label>Cliente (*)</label>
+			<select name="cliente" class="form-control select2 muestraMensaje">
+				<option value="${resp.ID_CLIENTE}">${resp.APELLIDO_PATERNO + ' ' + resp.APELLIDO_MATERNO + ' ' + resp.NOMBRE}</option>
+			</select>
+			<div class="vacio oculto">¡Campo obligatorio!</div>
+		</div>
+
+		<div class="form-group">
+			<label>Colaborador (*)</label>
+			<select name="empleado" class="form-control select2">${optsEmpleado}</select>
+			<div class="vacio oculto">¡Campo obligatorio!</div>
+		</div>
+
+		<div class="form-group">
+			<label>Servicio (*)</label>
+			<select name="servicio" class="form-control select2">${optsServicio}</select>
+			<div class="vacio oculto">¡Campo obligatorio!</div>
+		</div>
+
+		<div class="form-group">
+			<label>Hora reserva (*)</label>
+			<select id="horaReserva" name="horaReserva" class="form-control select2">
+				<option value="">Seleccionar...</option>
+			</select>
+			<input value="" id="fechaReserva" name="fechaReserva" maxlength="10" type="hidden">
+			<div class="vacio oculto">¡Campo obligatorio!</div>
+		</div>
+
+		<div class="form-group">
+			<label>Comentario</label>
+			<input name="comentario" autocomplete="off" maxlength="250" type="text"
+				class="form-control" placeholder="Opcional...">
+		</div>
+
+		<div class="pt-2 text-center">
+			${limpia() + quitar() + guarda()}
+		</div>
+		<div class="h8 text-center pt-2">(*) Campos obligatorios.</div>
+	</form>`;
+
+	mostrar_general1({
+		titulo: 'RESERVA · ' + moment(objeto.fecha).format('DD-MM-YYYY'),
+		msg: listado
+	});
+
+	$('#' + objeto.tabla + ' #fechaReserva').val(moment(objeto.fecha).format('DD-MM-YYYY'));
+
+	$('.select2').select2({
+		placeholder: 'Seleccionar...',
+		dropdownAutoWidth: true,
+		width: '100%',
+		dropdownParent: $('#general1')
+	});
+
+	objeto.cliente      = $(`#${objeto.tabla} select[name=cliente]`);
+	objeto.empleado     = $(`#${objeto.tabla} select[name=empleado]`);
+	objeto.servicio     = $(`#${objeto.tabla} select[name=servicio]`);
+	objeto.fechaReserva = $(`#${objeto.tabla} input[name=fechaReserva]`);
+	objeto.horaReserva  = $(`#${objeto.tabla} select[name=horaReserva]`);
+	objeto.comentario   = $(`#${objeto.tabla} input[name=comentario]`);
+
+	eventosReserva(objeto);
 }
 
-function eventosReserva(objeto){
-	$('#'+objeto.tabla+' div').off( 'keyup');
-    $('#'+objeto.tabla+' div').on( 'keyup','input[type=text]',function(){
-		let name=$(this).attr('name');
-		let elemento=$("#"+objeto.tabla+" input[name="+name+"]");
-		if(name=='comentario'){
-			comentarioRegex(elemento);
-		}
+function eventosReserva(objeto) {
+	$('#' + objeto.tabla + ' div').off('keyup')
+		.on('keyup', 'input[type=text]', function () {
+			const name = $(this).attr('name');
+			if (name === 'comentario') comentarioRegex($(`#${objeto.tabla} input[name=${name}]`));
+		});
+
+	$('#' + objeto.tabla + ' div').off('change')
+		.on('change', 'select', function () {
+			const name = $(this).attr('name');
+			const el   = $(`#${objeto.tabla} select[name=${name}]`);
+			if (name === 'empleado') {
+				verificaFechas({
+					fecha:    $('#fechaReserva').val(),
+					empleado: el.val(),
+					tabla:    objeto.tabla
+				});
+			}
+			validaVacioSelect(el);
+		});
+
+	$('#' + objeto.tabla + ' div').on('click', 'button[name=btnGuarda]', function () {
+		objeto.id        = $(`#${objeto.tabla} span.muestraId`).text();
+		objeto.nombreMsg = $(`#${objeto.tabla} span.muestraNombre`).text();
+		validaFormularioReserva(objeto);
 	});
 
-	$('#'+objeto.tabla+' div').off( 'change');
-    $('#'+objeto.tabla+' div').on( 'change','select',function(){
-		let name=$(this).attr('name');
-		let elemento=$("#"+objeto.tabla+" select[name="+name+"]");
-		if(name=='empleado'){
-			let fechaR=$("#fechaReserva").val();
-			let empleadoR=$("#"+objeto.tabla+" select[name="+name+"]").val();
-			verificaFechas({fecha:fechaR,empleado:empleadoR, tabla:objeto.tabla})
-		}
-		validaVacioSelect(elemento);
-	});
-
-	$('#'+objeto.tabla+' div').on( 'change','input[type=time]',function(){
-		let name=$(this).attr('name');
-		let elemento=$("#"+objeto.tabla+" input[name="+name+"]");
-		if(name=='horaReserva'){
-			validaVacio(elemento);
-		}
-	});
-
-	$('#'+objeto.tabla+' div').on( 'click','button[name=btnGuarda]',function(){//guarda
-		objeto.id= $("#"+objeto.tabla+" span.muestraId").text()
-		objeto.nombreMsg= $("#"+objeto.tabla+" span.muestraNombre").text()
-		validaFormularioReserva(objeto)
-	});
-
-	$('#'+objeto.tabla+' div').on( 'click','button[name=btnLimpia]',function(){//limpia
+	$('#' + objeto.tabla + ' div').on('click', 'button[name=btnLimpia]', function () {
 		limpiaTodo(objeto.tabla);
 	});
 
-	$('#'+objeto.tabla+' div').on( 'click','button[name=btnQuitar]',function(){//quitar
-		let id= $("#"+objeto.tabla+" span.muestraId").text()
-		let nombre= $("#"+objeto.tabla+" span.muestraNombre").text()
-		reservaElimina({id:id,nombre:nombre,tabla:objeto.tabla});
-	});
-
-	$('#'+objeto.tabla+'Tabla tbody').on( 'click','td a.estado',function(){//estado
-		let evento=$(this).parents("tr")
-    	let id=evento.attr('id');
-		let nombre=evento.find("td div.nombre").text();
-		reservaEstado({id:id,nombre:nombre,tabla:objeto.tabla});
+	$('#' + objeto.tabla + ' div').on('click', 'button[name=btnQuitar]', function () {
+		const id     = $(`#${objeto.tabla} span.muestraId`).text();
+		const nombre = $(`#${objeto.tabla} span.muestraNombre`).text();
+		reservaElimina({ id, nombre, tabla: objeto.tabla });
 	});
 }
 
-async function verificaFechas(objeto){
+async function verificaFechas(objeto) {
 	bloquea();
-	const horas= await axios.get('/api/'+objeto.tabla+'/listar/hora/'+objeto.empleado+'/'+objeto.fecha+'/'+verSesion(),{ 
-		headers:{
-			authorization: `Bearer ${verToken()}`
+	const [rHoras, rHorario] = await Promise.all([
+		axios.get(`/api/${objeto.tabla}/listar/hora/${objeto.empleado}/${objeto.fecha}/${verSesion()}`, {
+			headers: { authorization: `Bearer ${verToken()}` }
+		}),
+		axios.get(`/api/parametro/detalle/listar/62/${verSesion()}`, {
+			headers: { authorization: `Bearer ${verToken()}` }
+		})
+	]);
+
+	const ocupadas = (rHoras.data.valor.info || []).map(r => r.HORA);
+	const horario  = rHorario.data.valor.info;
+
+	let opts = '<option value="">Seleccionar...</option>';
+	for (let i = 0; i < horario.length; i++) {
+		if (horario[i].ES_VIGENTE == 1) {
+			const dis = ocupadas.includes(horario[i].DESCRIPCIONDETALLE) ? 'disabled' : '';
+			opts += `<option ${dis} value="${horario[i].DESCRIPCIONDETALLE}">${horario[i].DESCRIPCIONDETALLE}</option>`;
 		}
-	});
-
-	const horario = await axios.get("/api/parametro/detalle/listar/62/"+verSesion(),{ 
-		headers:{
-			authorization: `Bearer ${verToken()}`
-		} 
-	});
-
-	const resp1=horas.data.valor.info;
-	const resp2=horario.data.valor.info;
-	let arrResp1=(resp1===undefined)?[]:resp1.map(r => r.HORA);
-
-	let listado=`<option value="">Select...</option>`;
-				for(var i=0;i<resp2.length;i++){
-					if(resp2[i].ES_VIGENTE==1){
-						let disabled=(arrResp1.includes(resp2[i].DESCRIPCIONDETALLE))?'disabled':'';
-
-				listado+=`<option ${disabled} value="${resp2[i].DESCRIPCIONDETALLE}">${resp2[i].DESCRIPCIONDETALLE}</option>`;
-					}
-				}
-	$('#horaReserva').html(listado);
-
+	}
+	$('#horaReserva').html(opts);
 	desbloquea();
-	
 }
 
-async function reservaEdita(objeto){
-	quitaValidacionTodo(objeto.tabla)
+async function reservaEdita(objeto) {
+	quitaValidacionTodo(objeto.tabla);
 	bloquea();
-	const busca= await axios.get('/api/'+objeto.tabla+'/buscar/'+objeto.id+'/'+verSesion(),{ 
-		headers:{
-			authorization: `Bearer ${verToken()}`
-		}
+	const r    = await axios.get(`/api/${objeto.tabla}/buscar/${objeto.id}/${verSesion()}`, {
+		headers: { authorization: `Bearer ${verToken()}` }
 	});
-	const resp=busca.data.valor.info;
-	await verificaFechas({fecha:moment(resp.FECHA_RESERVA).format('DD-MM-YYYY'),empleado:resp.ID_EMPLEADO, tabla:objeto.tabla})
-
+	const resp = r.data.valor.info;
+	await verificaFechas({
+		fecha:    moment(resp.FECHA_RESERVA).format('DD-MM-YYYY'),
+		empleado: resp.ID_EMPLEADO,
+		tabla:    objeto.tabla
+	});
 	desbloquea();
-	
+
 	objeto.cliente.val(resp.ID_CLIENTE).trigger('change.select2');
 	objeto.empleado.val(resp.ID_EMPLEADO).trigger('change.select2');
 	objeto.servicio.val(resp.ID_SERVICIO_SUCURSAL).trigger('change.select2');
@@ -444,146 +1086,92 @@ async function reservaEdita(objeto){
 	objeto.horaReserva.val(moment(resp.FECHA_RESERVA).format('HH:mm')).trigger('change.select2');
 }
 
-function validaFormularioReserva(objeto){	
+function validaFormularioReserva(objeto) {
 	validaVacio(objeto.horaReserva);
 	validaVacioSelect(objeto.cliente);
 	validaVacioSelect(objeto.empleado);
 	validaVacioSelect(objeto.servicio);
 
-	if(objeto.horaReserva.val()=="" || objeto.cliente.val()=="" || objeto.empleado.val()=="" || objeto.servicio.val()==""){
-		return false;
-	}else{
-		enviaFormularioReserva(objeto);
-	}
+	if (!objeto.horaReserva.val() || !objeto.cliente.val() ||
+		!objeto.empleado.val()    || !objeto.servicio.val()) return false;
+
+	enviaFormularioReserva(objeto);
 }
 
-function enviaFormularioReserva(objeto){
-	let dato=(objeto.id==0)?muestraMensaje({tabla:objeto.tabla}):objeto.nombreMsg;
-	let verbo=(objeto.id==0)?'Creará':'Modificará';
-	var fd = new FormData(document.getElementById(objeto.tabla));
-	fd.append("id", objeto.id);
-	fd.append("sesId", verSesion());
-	
-	confirm("¡"+verbo+" la reserva para: "+dato+"!",function(){
+function enviaFormularioReserva(objeto) {
+	const dato  = (objeto.id == 0) ? muestraMensaje({ tabla: objeto.tabla }) : objeto.nombreMsg;
+	const verbo = (objeto.id == 0) ? 'Creará' : 'Modificará';
+	const fd    = new FormData(document.getElementById(objeto.tabla));
+	fd.append('id',    objeto.id);
+	fd.append('sesId', verSesion());
+
+	confirm(`¡${verbo} la reserva para: ${dato}!`, function () {
 		return false;
-	},async function(){
+	}, async function () {
 		bloquea();
-		let body=fd;
 		try {
-			let creaEdita;
-			if(objeto.id==0){
-				creaEdita = await axios.post("/api/"+objeto.tabla+"/crear",body,{ 
-					headers:{
-						authorization: `Bearer ${verToken()}`
-					} 
-				});
-			}else{
-				creaEdita = await axios.put("/api/"+objeto.tabla+"/editar/"+objeto.id,body,{ 
-					headers:{
-						authorization: `Bearer ${verToken()}`
-					} 
-				});
-			}
-			desbloquea();
-			$("#general1").modal("hide");
-			resp=creaEdita.data.valor;
-			if(resp.resultado){
-				activarCalendario(objeto);
-			}else{
-				mensajeSistema(resp.mensaje);
-			}	
-		}catch (err) {
-			desbloquea();
-			message=(err.response)?err.response.data.error:err;
-			mensajeError(message);
-		}
-    });
-}
+			const r = (objeto.id == 0)
+				? await axios.post(`/api/${objeto.tabla}/crear`, fd,              { headers: { authorization: `Bearer ${verToken()}` } })
+				: await axios.put(`/api/${objeto.tabla}/editar/${objeto.id}`, fd, { headers: { authorization: `Bearer ${verToken()}` } });
 
-async function enviaFormularioReservaDD(objeto){
-	bloquea();
-	let body={
-		id:objeto.id,
-		fecha:objeto.fecha,
-		token:verToken(),
-		sesId:verSesion()
-	};
-	try {
-		edita = await axios.put("/api/"+objeto.tabla+"/editarDD/"+objeto.id,body,{ 
-			headers:{
-				authorization: `Bearer ${verToken()}`
-			} 
-		});
-		desbloquea();
-		resp=edita.data.valor;
-		if(resp.resultado){
-			activarCalendario(objeto);
-		}else{
-			mensajeSistema(resp.mensaje);
-		}	
-	}catch (err) {
-		desbloquea();
-		message=(err.response)?err.response.data.error:err;
-		mensajeError(message);
-	}
-}
-
-function reservaElimina(objeto){
-	confirm("¡Eliminará la reserva de: "+objeto.nombre+"!",function(){
-		return false;
-	},async function(){
-        bloquea();
-		try {
-			const eliminar = await axios.delete("/api/"+objeto.tabla+"/eliminar/"+objeto.id,{ 
-				headers:{authorization: `Bearer ${verToken()}`} 
-			});
-			
 			desbloquea();
-			$("#general1").modal("hide");
-			resp=eliminar.data.valor;
-			if(resp.resultado){
-				activarCalendario(objeto);
-			}else{
+			cerrar_general1();
+			const resp = r.data.valor;
+			if (resp.resultado) {
+				await refrescarCalendario();
+			} else {
 				mensajeSistema(resp.mensaje);
 			}
-		}catch (err) {
+		} catch (err) {
 			desbloquea();
-			message=(err.response)?err.response.data.error:err;
-			mensajeError(message);
+			mensajeError((err.response) ? err.response.data.error : err);
 		}
 	});
 }
 
-function reservaEstado(objeto){
-	confirm("¡Cambiará el estado del registro: "+objeto.nombre+"!",function(){
+function reservaElimina(objeto) {
+	confirm(`¡Eliminará la reserva de: ${objeto.nombre}!`, function () {
 		return false;
-	},async function(){
+	}, async function () {
 		bloquea();
-		let body={
-		}
 		try {
-			const estado = await axios.put("/api/"+objeto.tabla+"/estado/"+objeto.id,body,{ 
-				headers:{authorization: `Bearer ${verToken()}`} 
+			const r = await axios.delete(`/api/${objeto.tabla}/eliminar/${objeto.id}`, {
+				headers: { authorization: `Bearer ${verToken()}` }
 			});
 			desbloquea();
-			resp=estado.data.valor;
-			if(resp.resultado){
-				let estado=(resp.info.ESTADO==0)?'tachado':'';
-
-				$("#"+objeto.tabla+"Tabla #"+objeto.id+" .estadoTachado ").removeClass('tachado');
-
-				$("#"+objeto.tabla+"Tabla #"+objeto.id+" .estadoTachado ").addClass(estado);
-
-				//success("Estado","¡Se ha cambiado el estado del registro: "+objeto.nombre+"!");
-				activarCalendario(objeto);
-			}else{
+			cerrar_general1();
+			const resp = r.data.valor;
+			if (resp.resultado) {
+				await refrescarCalendario();
+			} else {
 				mensajeSistema(resp.mensaje);
 			}
-		}catch (err) {
+		} catch (err) {
 			desbloquea();
-			message=(err.response)?err.response.data.error:err;
-			mensajeError(message);
+			mensajeError((err.response) ? err.response.data.error : err);
 		}
 	});
 }
 
+function reservaEstado(objeto) {
+	confirm(`¡Cambiará el estado del registro: ${objeto.nombre}!`, function () {
+		return false;
+	}, async function () {
+		bloquea();
+		try {
+			const r = await axios.put(`/api/${objeto.tabla}/estado/${objeto.id}`, {}, {
+				headers: { authorization: `Bearer ${verToken()}` }
+			});
+			desbloquea();
+			const resp = r.data.valor;
+			if (resp.resultado) {
+				await refrescarCalendario();
+			} else {
+				mensajeSistema(resp.mensaje);
+			}
+		} catch (err) {
+			desbloquea();
+			mensajeError((err.response) ? err.response.data.error : err);
+		}
+	});
+}

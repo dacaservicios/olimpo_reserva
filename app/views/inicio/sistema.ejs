@@ -1,68 +1,174 @@
 <!-- Loader -->
 <div id="global-loader">
-    <div class="spinner-border text-white" role="status"></div>
+    <div class="spinner-border" role="status"></div>
 </div>
-<!-- /Loader -->
-<!-- Page -->
-<div class="page custom-index">
-    <input type="hidden" id="userSesion" value="<%= user.id%>">
-    <input type="hidden" id="userSucursal" value="">
-    <div>
-        <!-- main-header -->
-        <div class="main-header side-header sticky nav nav-item">
-            <div class="container-fluid main-container ">
-                <div class="main-header-left cursor">
-                    <i onclick="vistaMenuSubMenu({ruta:'reserva'.toLowerCase(),idSubMenu:88});" class="las la-calendar-alt la-3x"></i><strong>Calendario</strong>
+
+<!-- Hidden session inputs -->
+<input type="hidden" id="userSesion"   value="<%= user.id%>">
+<input type="hidden" id="userSucursal" value="">
+<input type="hidden" id="userNivel"    value="">
+
+<!-- Script loader -->
+<div id="jsPropio"></div>
+
+<!-- ═══════════════════════════════
+     TOP APP BAR
+════════════════════════════════ -->
+<header class="android-top-bar">
+    <div class="brand" onclick="irReservas()">
+        <img src="/imagenes/logo.png" alt="Olimpo" class="imagenUsuarioInicio">
+        <span class="brand-name">Olimpo<em>Barber</em></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+        <button class="android-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasApps" title="Módulos">
+            <i class="las la-th-large"></i>
+        </button>
+        <button class="android-icon-btn android-avatar" style="padding:0;border:2px solid var(--md-primary);border-radius:50%;"
+            data-bs-toggle="offcanvas" data-bs-target="#offcanvasProfile">
+            <img class="imagenUsuarioInicio" src="/imagenes/logo.png" alt="Perfil"
+                style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════
+     MAIN CONTENT
+════════════════════════════════ -->
+<main class="android-content">
+    <div id="cuerpoPrincipal" class="main-container container-fluid"></div>
+</main>
+
+<!-- ═══════════════════════════════
+     FAB — Nueva Reserva
+════════════════════════════════ -->
+<button class="android-fab" id="fabNuevaReserva" onclick="irReservas()" title="Nueva reserva">
+    <i class="las la-calendar-plus"></i>
+</button>
+
+<!-- ═══════════════════════════════
+     BOTTOM NAVIGATION
+════════════════════════════════ -->
+<nav class="android-bottom-nav">
+    <button class="md-nav-item active" id="navReservas" onclick="irReservas()">
+        <div class="md-nav-pill"></div>
+        <i class="las la-calendar-alt md-nav-icon"></i>
+        <span class="md-nav-label">Reservas</span>
+    </button>
+    <button class="md-nav-item" id="navApps"
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasApps">
+        <div class="md-nav-pill"></div>
+        <i class="las la-th md-nav-icon"></i>
+        <span class="md-nav-label">Módulos</span>
+    </button>
+    <button class="md-nav-item" id="navPerfil"
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasProfile">
+        <div class="md-nav-pill"></div>
+        <i class="las la-user-circle md-nav-icon"></i>
+        <span class="md-nav-label">Perfil</span>
+    </button>
+</nav>
+
+<!-- ═══════════════════════════════
+     OFFCANVAS — PERFIL
+════════════════════════════════ -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasProfile">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Mi Cuenta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="md-profile-header">
+            <img class="md-profile-avatar imagenUsuarioInicio" src="/imagenes/logo.png" alt="Avatar">
+            <div>
+                <div class="md-profile-name" id="usuarioMenu2">—</div>
+                <div class="md-profile-role" id="nivelMenu2">Barbería</div>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+            <a id="cambiaPassword" href="#" class="md-list-item" data-bs-dismiss="offcanvas">
+                <i class="bx bx-slider-alt"></i>
+                <span>Cambiar contraseña</span>
+            </a>
+            <a id="salir" href="#" class="md-list-item danger">
+                <i class="bx bx-log-out"></i>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════
+     OFFCANVAS — MÓDULOS
+════════════════════════════════ -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasApps">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Módulos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="row g-2">
+            <div class="col-4">
+                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irReservas()">
+                    <div class="md-app-icon"><i class="las la-calendar-alt"></i></div>
+                    <span>Reservas</span>
                 </div>
-                <div class="main-header-right">
-                    <div class="mb-0 navbar navbar-expand-lg navbar-nav-right responsive-navbar navbar-dark p-0">
-                        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
-                            <ul class="nav nav-item  navbar-nav-right ms-auto">
-                                <li class="dropdown main-profile-menu nav nav-item nav-link">
-                                    <a class="main-img-user" href=""><img class='imagenUsuarioInicio' alt="" src="/imagenes/logo.png"></a>
-                                    <div class="dropdown-menu">
-                                        <div class="main-header-profile bg-primary p-3">
-                                            <div class="d-flex wd-100p">
-                                                <div class="main-img-user"><img class='imagenUsuarioInicio' alt="" src="/imagenes/logo.png" class=""></div>
-                                                <div class="ms-3 my-auto">
-                                                    <h6 id="usuarioMenu2"></h6><span id="nivelMenu2"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- <a id="miPerfil" class="dropdown-item" href="#" ><i class='bx bx-id-card'></i> Mi perfil</a> -->
-                                        <a id="cambiaPassword" class="dropdown-item" href="#"><i class="bx bx-slider-alt"></i> Cambiar contraseña</a>
-                                        <a id="salir" class="dropdown-item" href="#" ><i class="bx bx-log-out"></i> Salir</a>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+            </div>
+            <div class="col-4">
+                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('cliente')">
+                    <div class="md-app-icon"><i class="las la-users"></i></div>
+                    <span>Clientes</span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('empleado')">
+                    <div class="md-app-icon"><i class="las la-user-tie"></i></div>
+                    <span>Empleados</span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('serviciosucursal')">
+                    <div class="md-app-icon"><i class="las la-cut"></i></div>
+                    <span>Servicios</span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irModulo('parametro')">
+                    <div class="md-app-icon"><i class="las la-sliders-h"></i></div>
+                    <span>Parámetros</span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="md-app-card" data-bs-dismiss="offcanvas" onclick="irInicio()">
+                    <div class="md-app-icon"><i class="las la-chart-bar"></i></div>
+                    <span>Dashboard</span>
                 </div>
             </div>
         </div>
-        <!-- /main-header -->
     </div>
-
-    <!-- main-content -->
-    <div class="main-content app-content">
-
-        <!-- container -->
-        <div id="cuerpoPrincipal" class="main-container container-fluid">
-
-        </div>
-        <!-- /Container -->
-    </div>
-    <!-- /main-content -->
-
-
-
-    <!-- Footer opened -->
-    <div class="main-footer">
-        <div class="container-fluid pd-t-0 ht-100p">
-            <span> Copyright ©2023 <a href="https://aynisystem.com" class="text-primary">AyniSystem</a>. <span class="fa fa-heart text-danger"></span> Todos los derechos reservados.</span>
-        </div>
-    </div>
-    <!-- Footer closed -->
-
 </div>
-<!-- End Page -->
+
+<script>
+// Navegación bottom bar
+function setNavActive(id) {
+    document.querySelectorAll('.md-nav-item').forEach(function(el) {
+        el.classList.remove('active');
+    });
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active');
+}
+
+function irReservas() {
+    setNavActive('navReservas');
+    vistaMenuSubMenu({ ruta: 'reserva', idSubMenu: 88 });
+}
+
+function irInicio() {
+    setNavActive('navApps');
+    vistaMenuSubMenu({ ruta: 'inicio', idSubMenu: 1 });
+}
+
+function irModulo(ruta, idSubMenu) {
+    setNavActive('navApps');
+    vistaMenuSubMenu({ ruta: ruta, idSubMenu: idSubMenu || 0 });
+}
+</script>
