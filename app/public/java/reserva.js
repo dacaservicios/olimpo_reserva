@@ -229,6 +229,7 @@ function verDetalleReserva(evt, soloLectura = false) {
 
 	const estadoBadge = _resEstadoBadge(evt.ESTADO || evt.ID_ESTADO);
 
+	$('#general1').removeClass('wiz-active');
 	mostrar_general1({
 		titulo: 'Detalle de Reserva',
 		msg: `
@@ -412,6 +413,7 @@ async function abrirEdicionReserva(id) {
 }
 
 function _mostrarFormEdicion(res, id) {
+	$('#general1').removeClass('wiz-active');
 	const today       = moment();
 	const fechaActual = moment(res.FECHA_RESERVA);
 	let   fechaEdit   = fechaActual.clone();
@@ -632,6 +634,7 @@ async function nuevaReservaFecha(dateStr) {
 			<div id="wizNav"></div>
 		</div>`
 	});
+	$('#general1').addClass('wiz-active');
 
 	_wizRenderStep();
 }

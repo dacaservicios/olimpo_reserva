@@ -414,7 +414,9 @@ form .card-header { padding: 8px 14px !important; }
 .offcanvas-body {
   padding: 14px !important;
   overflow-y: auto; flex: 1;
+  scrollbar-width: none;
 }
+.offcanvas-body::-webkit-scrollbar { display: none; }
 
 .btn-close { filter: invert(1) !important; opacity: .6 !important; }
 .btn-close:hover { opacity: 1 !important; }
@@ -1295,9 +1297,16 @@ table tbody a.crud i { color: white; }
    WIZARD — NUEVA RESERVA
    ================================================ */
 
-/* Contenedor */
-.wiz-container { display: flex; flex-direction: column; min-height: calc(100vh - 120px); }
-.wiz-content   { flex: 1; }
+/* Contenedor — el scroll vive en .wiz-content, no en .offcanvas-body */
+#general1.wiz-active .offcanvas-body {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0 !important;
+}
+.wiz-container { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.wiz-content   { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.wiz-content::-webkit-scrollbar { display: none; }
 
 /* Barra de pasos */
 .wiz-steps-bar {
@@ -1504,8 +1513,9 @@ table tbody a.crud i { color: white; }
 
 /* ── Botones de navegación ── */
 .wiz-nav {
-  display: flex; gap: 10px; padding: 16px 0 4px;
-  border-top: 1px solid var(--md-outline-var); margin-top: 20px;
+  display: flex; gap: 10px; padding: 12px 0 4px;
+  border-top: 1px solid var(--md-outline-var); margin-top: 0;
+  flex-shrink: 0;
 }
 .wiz-btn-back {
   flex: 1; padding: 13px; border-radius: 24px;
