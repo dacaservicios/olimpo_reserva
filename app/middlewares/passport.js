@@ -17,7 +17,7 @@ passport.use('local.login',new LocalStrategy({
             done(null, valor);
             return;
         }else{
-            done(valor, false);
+            done(null, false, { message: valor.mensaje });
             return;
         }
     })

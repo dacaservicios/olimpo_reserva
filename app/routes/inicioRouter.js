@@ -36,16 +36,28 @@ router.get('/sistema', isLogin,(req, res) => {
 
 router.post('/inicio/verificaLogin', notLogin, caracter, validaSchema(schemaLogin), verificarLogin);
 
-router.post('/inicio/verificaLoginOk', notLogin, caracter, validaSchema(schemaLogin), passport.authenticate('local.login'), function(req, res) {
-        res.json({
-            valor : {
-                user: req.user,
-                url: config.URL_SISTEMA
+router.post('/inicio/verificaLoginOk', notLogin, caracter, validaSchema(schemaLogin), (req, res, next) => {
+    passport.authenticate('local.login', (err, user, info) => {
+        if (err) {
+            return res.status(500).json({
+                error: { message: err.message || JSON.stringify(err), errno: err.errno || 0, code: err.code || 'ERR' }
+            });
+        }
+        if (!user) {
+            return res.json({
+                valor: { user: { resultado: false, mensaje: (info && info.message) || 'Error de autenticación' } }
+            });
+        }
+        req.logIn(user, (loginErr) => {
+            if (loginErr) {
+                return res.status(500).json({
+                    error: { message: loginErr.message, errno: 0, code: 'SESSION_ERR' }
+                });
             }
-
+            return res.json({ valor: { user: req.user, url: config.URL_SISTEMA } });
         });
-    }
-);
+    })(req, res, next);
+});
 
 router.post('/inicio/register', notLogin, validaSchema(schemaRegister), async(req, res) => {
     try {

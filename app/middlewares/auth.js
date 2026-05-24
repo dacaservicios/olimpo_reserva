@@ -28,15 +28,12 @@ const verificarLogin = async (req, res, next)=>{
     const server =  req.hostname;
 
     const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
-    const row = await pool.query(query,
-    [
-        0,
-        body.txtCorreo,
-        0,
-        2,
-        ip,
-        server
-    ]);
+    let row;
+    try {
+        row = await pool.query(query, [0, body.txtCorreo, 0, 2, ip, server]);
+    } catch(err) {
+        return res.status(500).json({ error: { message: err.message, errno: err.errno, code: err.code } });
+    }
     if(row[0].length==0){
         res.json({
             valor:{
