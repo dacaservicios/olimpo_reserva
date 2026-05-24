@@ -1170,6 +1170,7 @@ table tbody a.crud i { color: white; }
   border: none !important;
   box-shadow: none !important;
 }
+.login-input-wrapper.errores { border-color: var(--md-error) !important; }
 .login-eye {
   padding: 0 12px;
   font-size: 18px;

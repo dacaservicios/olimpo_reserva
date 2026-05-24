@@ -59,21 +59,56 @@ $(document).ready(function() {
 
 });
 
+function _loginMarkError(input, tipo){
+	let $field = input.closest('.login-field');
+	let $wrap  = input.closest('.login-input-wrapper');
+	$wrap.addClass('errores').removeClass('borrarErrores');
+	$field.find('.vacio').toggleClass('oculto', tipo !== 'vacio');
+	$field.find('.formato').toggleClass('oculto', tipo !== 'formato');
+}
+
+function _loginMarkOk(input){
+	let $field = input.closest('.login-field');
+	let $wrap  = input.closest('.login-input-wrapper');
+	$wrap.removeClass('errores').addClass('borrarErrores');
+	$field.find('.vacio, .formato').addClass('oculto');
+}
+
 function validaFormulario(objeto){
-	let vcorreo=validaCorreo(objeto.elementos.correo);
-	let vpass=validaPassword(objeto.elementos.contrasena);
-	if(vcorreo==false || vpass==false){
-		return false
-	}else{
-		login(objeto);
+	let valid = true;
+
+	let correoVal = objeto.elementos.correo.val();
+	if(!correoVal){
+		_loginMarkError(objeto.elementos.correo, 'vacio'); valid = false;
+	} else if(!formatoCorreo(correoVal)){
+		_loginMarkError(objeto.elementos.correo, 'formato'); valid = false;
+	} else {
+		_loginMarkOk(objeto.elementos.correo);
 	}
+
+	let passVal = objeto.elementos.contrasena.val();
+	if(!passVal){
+		_loginMarkError(objeto.elementos.contrasena, 'vacio'); valid = false;
+	} else if(!formatoPassword(passVal)){
+		_loginMarkError(objeto.elementos.contrasena, 'formato'); valid = false;
+	} else {
+		_loginMarkOk(objeto.elementos.contrasena);
+	}
+
+	if(valid){ login(objeto); }
 }
 
 function enviaEventoLogin(objeto){
-	if(objeto.tipo=='text'){
-		validaCorreo(objeto.elementos.correo);
-	}else if(objeto.tipo=='password'){
-		validaPassword(objeto.elementos.contrasena);
+	let input = (objeto.tipo === 'text') ? objeto.elementos.correo : objeto.elementos.contrasena;
+	let val   = input.val();
+	let esOk  = (objeto.tipo === 'text') ? formatoCorreo(val) : formatoPassword(val);
+
+	if(!val){
+		_loginMarkError(input, 'vacio');
+	} else if(!esOk){
+		_loginMarkError(input, 'formato');
+	} else {
+		_loginMarkOk(input);
 	}
 }
 
