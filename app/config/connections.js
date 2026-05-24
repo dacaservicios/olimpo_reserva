@@ -3,12 +3,15 @@ const {promisify} = require('util');
 const config = require('./config');
 
 const pool = sql.createPool({
-  "host"      : config.HOST_BD,
-  "user"      : config.USER_BD,
-  "password"  : config.PASSWORD,
-  "database"  : config.DATABASE,
-  "port"      : config.PORT_BD,
-  "charset"  : 'utf8mb4'
+  "host"            : config.HOST_BD,
+  "user"            : config.USER_BD,
+  "password"        : config.PASSWORD,
+  "database"        : config.DATABASE,
+  "port"            : config.PORT_BD,
+  "charset"         : 'utf8mb4',
+  "connectionLimit" : 10,
+  "connectTimeout"  : 10000,
+  "acquireTimeout"  : 10000
 });
 pool.getConnection((error, connection)=>{
     if(error){

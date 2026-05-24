@@ -107,16 +107,14 @@ function miPerfil(){
 }
 
 async function datosUsuario(){
-    bloquea('Cargando datos del cliente...');
     try {
-        const datosUsuario=await axios.get('/api/inicio/datos/'+verSesion(),{ 
-            headers: 
-            { 
+        const datosUsuario=await axios.get('/api/inicio/datos/'+verSesion(),{
+            headers:
+            {
                 authorization: 'Bearer '+verToken()
-            } 
+            }
         });
         let resp=datosUsuario.data.valor;
-        desbloquea();
 
         if(resp.resultado){
             $("#userNivel").val(resp.info.ID_NIVEL);
@@ -147,7 +145,6 @@ async function datosUsuario(){
             mensajeSistema(resp.info.mensaje);
         }
     }catch (err) {
-        desbloquea();	
         message=err.response.data.error.message;
         errno=err.response.data.error.errno;
         mensajeError(err.response.data.error);
