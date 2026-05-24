@@ -74,7 +74,7 @@ function salir(){
             const resp=salir.data.valor.info;
             localStorage.removeItem('popup');
             desbloquea();
-            location.reload();  
+            window.location.replace('/');
         }catch (err) {
             desbloquea();	
             message=err.response.data.error.message;
@@ -153,7 +153,7 @@ async function datosUsuario(){
 
 function vistaMenuSubMenu(objeto){
     try{
-        $('#jsPropio').html("<script src='/java/"+objeto.ruta+".js?"+moment().format('DDMMYYYYHHmmss')+"'></script>");
+        $('#jsPropio').html("<script src='/java/"+objeto.ruta+".js?"+moment().format('DDMMYYYY')+"'></script>");
     }catch (err) {
         desbloquea();	
         message=err.response.data.error.message;
