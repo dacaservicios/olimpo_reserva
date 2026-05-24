@@ -34,6 +34,9 @@
   /* ── Phone frame ── */
   --md-max-w:            430px;
   --md-frame-l:          max(0px, calc(50% - var(--md-max-w) / 2));
+  /* ── Safe areas (notch / nav bar) ── */
+  --md-safe-top:         env(safe-area-inset-top, 0px);
+  --md-safe-bot:         env(safe-area-inset-bottom, 0px);
 }
 
 /* ── Base ── */
@@ -101,10 +104,11 @@ body {
   position: fixed; top: 0;
   left: var(--md-frame-l);
   right: var(--md-frame-l);
-  height: var(--md-top-h);
+  height: calc(var(--md-top-h) + var(--md-safe-top));
+  padding-top: var(--md-safe-top);
   background: var(--md-surface);
   display: flex; align-items: center;
-  padding: 0 8px;
+  padding-left: 8px; padding-right: 8px;
   z-index: 500;
   box-shadow: var(--md-elev-1);
   border-bottom: 1px solid var(--md-outline-var);
@@ -157,8 +161,8 @@ body {
    CONTENT AREA
    ================================================ */
 .android-content {
-  padding-top: var(--md-top-h);
-  padding-bottom: calc(var(--md-bot-h) + 8px);
+  padding-top: calc(var(--md-top-h) + var(--md-safe-top));
+  padding-bottom: calc(var(--md-bot-h) + var(--md-safe-bot) + 8px);
   min-height: 100vh;
   background: var(--md-bg);
 }
@@ -172,7 +176,8 @@ body {
   position: fixed; bottom: 0;
   left: var(--md-frame-l);
   right: var(--md-frame-l);
-  height: var(--md-bot-h);
+  height: calc(var(--md-bot-h) + var(--md-safe-bot));
+  padding-bottom: var(--md-safe-bot);
   background: var(--md-surface);
   display: flex; align-items: stretch;
   border-top: 1px solid var(--md-outline-var);
@@ -218,7 +223,7 @@ body {
    ================================================ */
 .android-fab {
   position: fixed;
-  bottom: calc(var(--md-bot-h) + 12px);
+  bottom: calc(var(--md-bot-h) + var(--md-safe-bot) + 12px);
   right: calc(var(--md-frame-l) + 16px);
   width: 56px; height: 56px;
   border-radius: 16px;
@@ -663,7 +668,7 @@ form .card-header { padding: 8px 14px !important; }
 /* Botón grande Nueva Reserva — fijo sobre la barra inferior */
 .md-nueva-reserva-btn {
   position: fixed;
-  bottom: calc(var(--md-bot-h) + 8px);
+  bottom: calc(var(--md-bot-h) + var(--md-safe-bot) + 8px);
   left: calc(var(--md-frame-l) + 16px);
   right: calc(var(--md-frame-l) + 16px);
   width: auto;
@@ -988,7 +993,7 @@ table tbody a.crud i { color: white; }
 .whatsapp-float {
   position: fixed !important;
   right: calc(var(--md-frame-l) + 16px) !important;
-  bottom: calc(var(--md-bot-h) + 76px) !important;
+  bottom: calc(var(--md-bot-h) + var(--md-safe-bot) + 76px) !important;
   width: 50px !important; height: 50px !important;
   background: #25d366 !important; color: #fff !important;
   border-radius: 50% !important;
@@ -1064,6 +1069,9 @@ table tbody a.crud i { color: white; }
    ================================================ */
 .android-login-screen {
   min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: var(--md-safe-top);
+  padding-bottom: var(--md-safe-bot);
   display: flex;
   flex-direction: column;
   background: var(--md-bg);
