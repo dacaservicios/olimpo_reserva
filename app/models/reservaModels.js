@@ -38,7 +38,7 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 ¡Gracias por elegirnos! 🙌`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
         if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
             await axios.post(config.URL_WHATSAPP,{
@@ -54,7 +54,7 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 🔥 ¡Prepárate para el próximo corte!`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
     } catch(_) {
         whatsappOk = false;
@@ -100,7 +100,7 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 📍 ¡Gracias por avisarnos! Te esperamos con la misma energía de siempre. 💈
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
         if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
             await axios.post(config.URL_WHATSAPP,{
@@ -116,7 +116,7 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 
 ⚠️ Revisa el cambio en tu agenda.`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
     } catch(_) {}
 
@@ -159,7 +159,7 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 📍 ¡Gracias por avisarnos! Te esperamos con la misma energía de siempre. 💈
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
         if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
             await axios.post(config.URL_WHATSAPP,{
@@ -175,7 +175,7 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 
 ⚠️ Revisa el cambio en tu agenda.`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
     } catch(_) {}
 
@@ -247,7 +247,7 @@ Hemos recibido tu solicitud de *cancelación de reserva*.
 Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 ¡Gracias por avisarnos! 🙏`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
         if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
             await axios.post(config.URL_WHATSAPP,{
@@ -263,7 +263,7 @@ Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 
 📌 Este espacio ha quedado disponible.`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
-            });
+            }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
         }
     } catch(_) {}
 
