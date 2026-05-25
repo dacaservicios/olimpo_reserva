@@ -862,6 +862,19 @@ async function _wizLoadTimes(dateStr) {
 		]);
 
 		const ocupadas = (rHoras.data.valor.info || []).map(r => r.HORA);
+
+		// Bloquear horas que el cliente ya tiene reservadas con este barbero en esta fecha
+		(_calEvents || [])
+			.filter(e =>
+				String(e.ID_EMPLEADO) === String(_wiz.barberoId) &&
+				moment(e.FECHA_RESERVA).format('YYYY-MM-DD') === dateStr &&
+				e.ESTADO !== 'CANCELADO'
+			)
+			.forEach(e => {
+				const h = moment(e.FECHA_RESERVA).format('HH:mm');
+				if (!ocupadas.includes(h)) ocupadas.push(h);
+			});
+
 		const horarios = (rHorario.data.valor.info || []).filter(h => h.ES_VIGENTE == 1);
 
 		if (!horarios.length) {
@@ -952,6 +965,8 @@ async function _wizNext() {
 }
 
 async function _wizEnviar() {
+	const $btn = $('.wiz-btn-next');
+	$btn.prop('disabled', true).text('Enviando…');
 	bloquea();
 	try {
 		const fd = new FormData();
@@ -978,6 +993,7 @@ async function _wizEnviar() {
 			mensajeSistema(resp.mensaje);
 		}
 	} catch (err) {
+		$btn.prop('disabled', false).text('Confirmar ✓');
 		desbloquea();
 		mensajeError((err.response) ? err.response.data.error : err);
 	}
