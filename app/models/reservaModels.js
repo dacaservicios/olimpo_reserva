@@ -18,12 +18,13 @@ const crearReserva = async (body)=>{
         body.sesId
     ]);
 
-    if(row[0][0].CEL_CLIENTE &&  row[0][0].NRO_WHATSAPP){
-    moment.locale('es');
-
-    let body2={
-            phone:'51'+row[0][0].CEL_CLIENTE,
-            message:`
+    let whatsappOk = true;
+    try {
+        moment.locale('es');
+        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CEL_CLIENTE,
+                message:`
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
 
@@ -36,16 +37,13 @@ Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
 Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 ¡Gracias por elegirnos! 🙌`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-
-        await axios.post(config.URL_WHATSAPP,body2);
-    }
-
-    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
-        let body3={
-            phone:'51'+row[0][0].CELULAR_EMPLEADO,
-            message:`
+        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CELULAR_EMPLEADO,
+                message:`
 💈🧔‍♂️ *Nueva cita agendada*
 
 👤 *Cliente:* ${row[0][0].CLIENTE}
@@ -55,16 +53,18 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
 🔥 ¡Prepárate para el próximo corte!`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-        await axios.post(config.URL_WHATSAPP,body3);
+    } catch(_) {
+        whatsappOk = false;
     }
 
-    return { 
+    return {
         resultado : true,
         info : row[0][0],
-        mensaje : '¡Registro creado!'
-    }; 
+        mensaje : whatsappOk ? '¡Registro creado!' : '¡Reserva registrada! No se pudo enviar la notificación de WhatsApp.'
+    };
 }
 
 const editarReserva = async (id,body)=>{
@@ -83,12 +83,12 @@ const editarReserva = async (id,body)=>{
         body.sesId
     ]);
 
-    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
-    moment.locale('es');
-
-    let body2={
-            phone:'51'+row[0][0].CEL_CLIENTE,
-            message:`
+    try {
+        moment.locale('es');
+        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CEL_CLIENTE,
+                message:`
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
@@ -99,16 +99,13 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
 📍 ¡Gracias por avisarnos! Te esperamos con la misma energía de siempre. 💈
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-
-    await axios.post(config.URL_WHATSAPP,body2);
-    }
-
-    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
-        let body3={
-            phone:'51'+row[0][0].CELULAR_EMPLEADO,
-            message:`
+        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CELULAR_EMPLEADO,
+                message:`
 ✏️💈 *Cita modificada*
 
 👤 *Cliente:* ${row[0][0].CLIENTE}
@@ -118,17 +115,17 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
 ⚠️ Revisa el cambio en tu agenda.`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-        await axios.post(config.URL_WHATSAPP,body3);
-    }
+    } catch(_) {}
 
-    return { 
+    return {
         resultado : true,
         info : row[0][0],
         mensaje : '¡Registro editado!'
-    }; 
-    
+    };
+
 }
 
 const editarReservaDD = async (id,body)=>{
@@ -145,12 +142,12 @@ const editarReservaDD = async (id,body)=>{
         body.sesId
     ]);
 
-    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
-    moment.locale('es');
-
-    let body2={
-            phone:'51'+row[0][0].CEL_CLIENTE,
-            message:`
+    try {
+        moment.locale('es');
+        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CEL_CLIENTE,
+                message:`
 🧔‍♂️💈 ¡Hola, ${row[0][0].CLIENTE}!
 Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
@@ -161,16 +158,13 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 
 📍 ¡Gracias por avisarnos! Te esperamos con la misma energía de siempre. 💈
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-
-    await axios.post(config.URL_WHATSAPP,body2);
-    }
-
-    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
-        let body3={
-            phone:'51'+row[0][0].CELULAR_EMPLEADO,
-            message:`
+        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CELULAR_EMPLEADO,
+                message:`
 ✏️💈 *Cita modificada*
 
 👤 *Cliente:* ${row[0][0].CLIENTE}
@@ -180,18 +174,17 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
 ⚠️ Revisa el cambio en tu agenda.`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-        await axios.post(config.URL_WHATSAPP,body3);
-    }
+    } catch(_) {}
 
-
-    return { 
+    return {
         resultado : true,
         info : row[0][0],
         mensaje : '¡Registro editado!'
-    }; 
-    
+    };
+
 }
 
 const buscarReserva = async(id,tabla,sesId)=>{
@@ -236,12 +229,12 @@ const eliminarReserva = async(id,tabla)=>{
         tabla
     ]);
 
-    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
-    moment.locale('es');
-
-    let body2={
-            phone:'51'+row[0][0].CEL_CLIENTE,
-            message:`
+    try {
+        moment.locale('es');
+        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CEL_CLIENTE,
+                message:`
 ❌ ¡Hola, ${row[0][0].CLIENTE}!
 Hemos recibido tu solicitud de *cancelación de reserva*.
 
@@ -253,16 +246,13 @@ Hemos recibido tu solicitud de *cancelación de reserva*.
 ⚠️ Esperamos verte en otra ocasión.
 Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 ¡Gracias por avisarnos! 🙏`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-
-    await axios.post(config.URL_WHATSAPP,body2);
-    }
-
-    if(row[0][0].CELULAR_EMPLEADO &&  row[0][0].NRO_WHATSAPP){
-        let body3={
-            phone:'51'+row[0][0].CELULAR_EMPLEADO,
-            message:`
+        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+            await axios.post(config.URL_WHATSAPP,{
+                phone:'51'+row[0][0].CELULAR_EMPLEADO,
+                message:`
 ❌💈 *Cita cancelada*
 
 👤 *Cliente:* ${row[0][0].CLIENTE}
@@ -272,17 +262,17 @@ Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
 
 📌 Este espacio ha quedado disponible.`.trim(),
-            sender: row[0][0].NRO_WHATSAPP,
+                sender: row[0][0].NRO_WHATSAPP,
+            });
         }
-        await axios.post(config.URL_WHATSAPP,body3);
-    }
+    } catch(_) {}
 
-    return { 
+    return {
         resultado : true,
         info : row[0][0],
         mensaje : '¡Registro eliminado!'
-    }; 
-    
+    };
+
 }
 
 const estadoReserva = async(id,tabla)=>{

@@ -987,7 +987,7 @@ async function _wizEnviar() {
 
 		const resp = r.data.valor;
 		if (resp.resultado) {
-			_wizShowSuccess();
+			_wizShowSuccess(resp.mensaje);
 			await refrescarCalendario();
 		} else {
 			mensajeSistema(resp.mensaje);
@@ -999,9 +999,13 @@ async function _wizEnviar() {
 	}
 }
 
-function _wizShowSuccess() {
+function _wizShowSuccess(mensaje) {
 	const fl      = moment(_wiz.fecha).locale('es').format('D [de] MMMM [de] YYYY');
 	const fechaLbl = fl.charAt(0).toUpperCase() + fl.slice(1);
+	const sinWsp   = mensaje && mensaje.includes('WhatsApp');
+	const avisoWsp = sinWsp
+		? `<div class="wiz-success-warn"><i class="las la-exclamation-triangle"></i> No se pudo enviar la notificación por WhatsApp. Tu reserva sí quedó registrada.</div>`
+		: '';
 
 	$('#wizStepsBar, #wizNav').html('');
 	$('#wizContent').html(`
@@ -1009,6 +1013,7 @@ function _wizShowSuccess() {
 			<div class="wiz-success-icon"><i class="las la-check"></i></div>
 			<div class="wiz-success-title">¡Reserva creada!</div>
 			<div class="wiz-success-sub">Tu reserva ha sido confirmada.</div>
+			${avisoWsp}
 			<div class="wiz-success-summary">
 				<div class="wiz-sum-row">
 					<span class="wiz-sum-key">Servicio</span>
