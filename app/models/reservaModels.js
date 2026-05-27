@@ -19,9 +19,9 @@ const crearReserva = async (body)=>{
     ]);
 
     let whatsappOk = true;
-    try {
-        moment.locale('es');
-        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+    moment.locale('es');
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CEL_CLIENTE,
                 message:`
@@ -39,8 +39,13 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 ¡Gracias por elegirnos! 🙌`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp cliente [crearReserva]:', err.response?.data || err.message);
+            whatsappOk = false;
         }
-        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+    }
+    if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CELULAR_EMPLEADO,
                 message:`
@@ -55,9 +60,9 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 🔥 ¡Prepárate para el próximo corte!`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp empleado [crearReserva]:', err.response?.data || err.message);
         }
-    } catch(_) {
-        whatsappOk = false;
     }
 
     return {
@@ -83,9 +88,9 @@ const editarReserva = async (id,body)=>{
         body.sesId
     ]);
 
-    try {
-        moment.locale('es');
-        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+    moment.locale('es');
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CEL_CLIENTE,
                 message:`
@@ -101,8 +106,12 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp cliente [editarReserva]:', err.response?.data || err.message);
         }
-        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+    }
+    if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CELULAR_EMPLEADO,
                 message:`
@@ -117,8 +126,10 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 ⚠️ Revisa el cambio en tu agenda.`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp empleado [editarReserva]:', err.response?.data || err.message);
         }
-    } catch(_) {}
+    }
 
     return {
         resultado : true,
@@ -142,9 +153,9 @@ const editarReservaDD = async (id,body)=>{
         body.sesId
     ]);
 
-    try {
-        moment.locale('es');
-        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+    moment.locale('es');
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CEL_CLIENTE,
                 message:`
@@ -160,8 +171,12 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp cliente [editarReservaDD]:', err.response?.data || err.message);
         }
-        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+    }
+    if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CELULAR_EMPLEADO,
                 message:`
@@ -176,8 +191,10 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 ⚠️ Revisa el cambio en tu agenda.`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp empleado [editarReservaDD]:', err.response?.data || err.message);
         }
-    } catch(_) {}
+    }
 
     return {
         resultado : true,
@@ -229,9 +246,9 @@ const eliminarReserva = async(id,tabla)=>{
         tabla
     ]);
 
-    try {
-        moment.locale('es');
-        if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+    moment.locale('es');
+    if(row[0][0].CEL_CLIENTE && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CEL_CLIENTE,
                 message:`
@@ -248,8 +265,12 @@ Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 ¡Gracias por avisarnos! 🙏`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp cliente [eliminarReserva]:', err.response?.data || err.message);
         }
-        if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+    }
+    if(row[0][0].CELULAR_EMPLEADO && row[0][0].NRO_WHATSAPP){
+        try {
             await axios.post(config.URL_WHATSAPP,{
                 phone:'51'+row[0][0].CELULAR_EMPLEADO,
                 message:`
@@ -264,8 +285,10 @@ Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 📌 Este espacio ha quedado disponible.`.trim(),
                 sender: row[0][0].NRO_WHATSAPP,
             }, { headers: { 'x-api-key': config.API_KEY_WHATSAPP } });
+        } catch(err) {
+            console.error('WhatsApp empleado [eliminarReserva]:', err.response?.data || err.message);
         }
-    } catch(_) {}
+    }
 
     return {
         resultado : true,
