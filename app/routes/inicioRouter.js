@@ -10,6 +10,10 @@ const config = require('../config/config');
 
 /*=================VISTAS INICIO===================*/
 
+router.get('/instalar', (req, res) => {
+    res.render(path.join(__dirname, '../views/instalar'));
+});
+
 router.get('/', notLogin, (req, res) => {
     res.render('index');
 });

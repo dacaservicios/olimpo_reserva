@@ -22,3 +22,10 @@
 
 <!-- Ocultar loader al terminar de cargar -->
 <script>$(window).on('load', function(){ $('#global-loader').fadeOut('fast'); });</script>
+
+<!-- PWA Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Instalar Olimpo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#c9a227">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Olimpo">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/imagenes/logo.png">
+    <link rel="icon" href="/imagenes/favicon.png">
+    <link href="/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/assets/css/icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/estilos/android.css">
+    <style>
+        body {
+            background: #030303;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .install-frame {
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            background: #0d0d0d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1.75rem;
+        }
+        .install-logo {
+            width: 110px;
+            height: 110px;
+            border-radius: 28px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.75rem;
+            box-shadow: 0 8px 40px rgba(201,162,39,.3);
+            overflow: hidden;
+        }
+        .install-logo img {
+            width: 85px;
+            height: 85px;
+            object-fit: contain;
+        }
+        .install-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: .35rem;
+            text-align: center;
+        }
+        .install-subtitle {
+            font-size: .95rem;
+            color: #777;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            line-height: 1.5;
+        }
+        .btn-install {
+            width: 100%;
+            padding: 1rem;
+            background: #c9a227;
+            color: #000;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .6rem;
+            transition: opacity .2s, transform .15s;
+            box-shadow: 0 4px 20px rgba(201,162,39,.35);
+        }
+        .btn-install:active { transform: scale(.97); }
+        .btn-install:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+        .install-msg {
+            margin-top: 1.1rem;
+            font-size: .88rem;
+            color: #aaa;
+            text-align: center;
+            line-height: 1.5;
+            min-height: 1.5em;
+        }
+        .install-msg.success { color: #4caf50; }
+        .install-msg.info    { color: #c9a227; }
+        .install-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 20px;
+            padding: .3rem .9rem;
+            font-size: .75rem;
+            color: #666;
+            margin-top: 2.5rem;
+        }
+        .install-badge i { color: #c9a227; }
+    </style>
+</head>
+<body>
+<div class="install-frame">
+
+    <div class="install-logo">
+        <img src="/imagenes/logo.png" alt="Olimpo">
+    </div>
+
+    <h1 class="install-title">Olimpo</h1>
+    <p class="install-subtitle">Instala la app en tu dispositivo<br>y accede con un toque.</p>
+
+    <button class="btn-install" id="btnInstalar">
+        <i class="las la-download"></i>
+        Instalar aplicación
+    </button>
+
+    <div class="install-msg" id="installMsg"></div>
+
+    <div class="install-badge">
+        <i class="las la-lock"></i>
+        Sin tienda de apps · Gratis
+    </div>
+
+</div>
+
+<script>
+(function () {
+    var deferredPrompt = null;
+    var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var isInStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || window.navigator.standalone === true;
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+    }
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    window.addEventListener('appinstalled', function () {
+        setMsg('success', '<i class="las la-check-circle"></i> ¡App instalada! Cierra esta ventana y búscala en tu escritorio o pantalla de inicio.');
+        document.getElementById('btnInstalar').disabled = true;
+    });
+
+    window.addEventListener('load', function () {
+        if (isInStandalone) {
+            setMsg('success', '<i class="las la-check-circle"></i> La app ya está instalada. Cierra esta ventana y búscala en tu escritorio o pantalla de inicio.');
+            document.getElementById('btnInstalar').disabled = true;
+        }
+    });
+
+    document.getElementById('btnInstalar').addEventListener('click', function () {
+        // Chrome / Android / Desktop — prompt automático
+        if (deferredPrompt) {
+            var btn = this;
+            btn.disabled = true;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function (choice) {
+                deferredPrompt = null;
+                if (choice.outcome === 'dismissed') {
+                    btn.disabled = false;
+                }
+            });
+            return;
+        }
+
+        // Ya instalada
+        if (isInStandalone) {
+            setMsg('success', '<i class="las la-check-circle"></i> La app ya está instalada. Cierra esta ventana y búscala en tu escritorio o pantalla de inicio.');
+            return;
+        }
+
+        // iOS Safari — único caso sin prompt automático
+        if (isIos) {
+            setMsg('info', 'En Safari: toca <strong>⬆ Compartir</strong> → <strong>"Agregar a pantalla de inicio"</strong>.');
+            return;
+        }
+
+        // Chrome/Android sin prompt aún: el navegador lo mostrará pronto
+        setMsg('info', 'Espera un momento y vuelve a intentarlo.');
+    });
+
+    function setMsg(type, html) {
+        var el = document.getElementById('installMsg');
+        el.className = 'install-msg ' + type;
+        el.innerHTML = html;
+    }
+})();
+</script>
+</body>
+</html>

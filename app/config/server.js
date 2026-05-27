@@ -34,6 +34,17 @@ app.use('/estilos',express.static(path.join(__dirname, '../public/estilos')));
 app.use('/librerias',express.static(path.join(__dirname, '../public/librerias')));
 app.use('/pdf',express.static(path.join(__dirname, '../public/pdf')));
 
+// PWA — servir manifest y service worker desde la raíz del dominio
+app.get('/manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.sendFile(path.join(__dirname, '../public/pwa/manifest.json'));
+});
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.sendFile(path.join(__dirname, '../public/pwa/sw.js'));
+});
+
 //setting
 
 app.set('port',config.PORT);
