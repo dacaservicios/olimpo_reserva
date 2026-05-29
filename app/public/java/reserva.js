@@ -10,7 +10,7 @@ let _calTabla    = 'reserva';
 
 // ── Estado del wizard ──
 let _wiz      = {};
-let _wizData  = { tipos: [], servicios: [], barberos: [], clientes: [] };
+let _wizData  = { tipos: [], servicios: [], barberos: [], clientes: [], sucursales: [] };
 let _wizCalDate = moment();
 
 // ── Detalle/edición de reserva ──
@@ -573,6 +573,7 @@ function _wizReset(fecha) {
 	_wiz = {
 		step: 1,
 		tipo: null, tipoClienteId: null,
+		sucursalId: null, sucursalNombre: '',
 		servicioId: null, servicioNombre: '', servicioDur: '',
 		barberoId: null, barberoNombre: '',
 		fecha: fecha || moment().format('YYYY-MM-DD'),
@@ -589,17 +590,20 @@ async function nuevaReservaFecha(dateStr) {
 	const diaSemana = moment(dateStr).isoWeekday();
 
 	try {
-		const [rServicio, rEmpleado, rCliente, rTipos] = await Promise.all([
+		const [rServicio, rEmpleado, rCliente, rTipos, rSucursal] = await Promise.all([
 			axios.get(`/api/serviciosucursal/listar/0/${verSesion()}`,      { headers: { authorization: `Bearer ${verToken()}` } }),
 			axios.get(`/api/empleado/listar/0/${verSesion()}`,              { headers: { authorization: `Bearer ${verToken()}` } }),
 			axios.get(`/api/cliente/listar/0/${verSesion()}`,               { headers: { authorization: `Bearer ${verToken()}` } })
 				.catch(() => ({ data: { valor: { info: [] } } })),
 			axios.get(`/api/parametro/detalle/listar/64/${verSesion()}`,    { headers: { authorization: `Bearer ${verToken()}` } })
+				.catch(() => ({ data: { valor: { info: [] } } })),
+			axios.get(`/api/sucursal/listar/${verEmpresa()}/${verSesion()}`,              { headers: { authorization: `Bearer ${verToken()}` } })
 				.catch(() => ({ data: { valor: { info: [] } } }))
 		]);
 
-		_wizData.tipos    = (rTipos.data.valor.info    || []).filter(t => t.ES_VIGENTE == 1);
-		_wizData.servicios = (rServicio.data.valor.info || []).filter(s => s.ES_VIGENTE == 1);
+		_wizData.tipos     = (rTipos.data.valor.info     || []).filter(t => t.ES_VIGENTE == 1);
+		_wizData.sucursales = (rSucursal.data.valor.info  || []).filter(s => s.ES_VIGENTE == 1);
+		_wizData.servicios = (rServicio.data.valor.info  || []).filter(s => s.ES_VIGENTE == 1);
 		_wizData.barberos  = (rEmpleado.data.valor.info || []).filter(e => {
 			if (e.ES_VIGENTE != 1) return false;
 			const d = e.ID_DESCANSO ? e.ID_DESCANSO.split(',').map(Number) : [];
@@ -673,7 +677,7 @@ function _wizRenderNav() {
 	$('#wizNav').html(`<div class="wiz-nav">${back}<button class="wiz-btn-next" onclick="_wizNext()">${nextLbl}</button></div>`);
 }
 
-// ── Paso 1: Tipo de cliente ──
+// ── Paso 1: Tipo de cliente + Sede ──
 function _wizStep1() {
 	const emojiMap = (desc) => {
 		const d = (desc || '').toLowerCase();
@@ -682,7 +686,7 @@ function _wizStep1() {
 		return '👤';
 	};
 
-	const cards = (_wizData.tipos.length
+	const tipoCards = (_wizData.tipos.length
 		? _wizData.tipos
 		: [{ ID_PARAMETRO_DETALLE: 0, DESCRIPCIONDETALLE: 'Sin tipos configurados' }]
 	).map(t => {
@@ -694,23 +698,53 @@ function _wizStep1() {
 		</div>`;
 	}).join('');
 
+	const sucCards = (_wizData.sucursales.length
+		? _wizData.sucursales
+		: [{ ID_SUCURSAL: 0, NOMBRE: 'Sin sedes configuradas' }]
+	).map(s => {
+		const sel = s.ID_SUCURSAL == _wiz.sucursalId ? ' selected' : '';
+		return `<div class="wiz-tipo-card wiz-sede-card${sel}"
+			data-id="${s.ID_SUCURSAL}" data-nombre="${s.NOMB_SUCURSAL}">
+			<div class="wiz-tipo-emoji">📍</div>
+			<div class="wiz-tipo-name">${s.NOMB_SUCURSAL}</div>
+		</div>`;
+	}).join('');
+
 	$('#wizContent').html(`
 		<div class="wiz-step-label">¿Para quién es la cita?</div>
 		<div class="wiz-step-sub">Selecciona el tipo de cliente</div>
-		<div class="wiz-tipo-grid">${cards}</div>
+		<div class="wiz-tipo-grid" id="wizTipoGrid">${tipoCards}</div>
+
+		<div class="wiz-step-label" style="margin-top:18px">¿En qué sede quieres atenderte?</div>
+		<div class="wiz-step-sub">Selecciona la sucursal</div>
+		<div class="wiz-tipo-grid" id="wizSedeGrid">${sucCards}</div>
 	`);
 
-	$('#wizContent').off('click', '.wiz-tipo-card').on('click', '.wiz-tipo-card', function () {
-		$('.wiz-tipo-card').removeClass('selected');
+	$('#wizTipoGrid').off('click', '.wiz-tipo-card').on('click', '.wiz-tipo-card', function () {
+		$('#wizTipoGrid .wiz-tipo-card').removeClass('selected');
 		$(this).addClass('selected');
 		_wiz.tipoClienteId = $(this).data('id');
 		_wiz.tipo          = $(this).data('nombre');
+	});
+
+	$('#wizSedeGrid').off('click', '.wiz-sede-card').on('click', '.wiz-sede-card', function () {
+		const newId = $(this).data('id');
+		if (newId != _wiz.sucursalId) {
+			_wiz.servicioId    = null;
+			_wiz.servicioNombre = '';
+			_wiz.servicioDur   = '';
+		}
+		$('#wizSedeGrid .wiz-sede-card').removeClass('selected');
+		$(this).addClass('selected');
+		_wiz.sucursalId     = newId;
+		_wiz.sucursalNombre = $(this).data('nombre');
 	});
 }
 
 // ── Paso 2: Servicio ──
 function _wizStep2() {
-	const cards = _wizData.servicios.map(s => {
+	const filtrados = _wizData.servicios.filter(s => s.ID_SUCURSAL == _wiz.sucursalId);
+	const cards = filtrados.map(s => {
 		const sel  = s.ID_SERVICIO_SUCURSAL == _wiz.servicioId ? ' selected' : '';
 		const desc = s.DESCRIPCION ? `<div class="wiz-service-dur">${s.DESCRIPCION}</div>` : '';
 		return `<div class="wiz-service-card${sel}"
@@ -718,7 +752,7 @@ function _wizStep2() {
 			<div class="wiz-service-icon"><i class="las la-cut"></i></div>
 			<div class="wiz-service-name">${s.NOMBRE}</div>${desc}
 		</div>`;
-	}).join('') || '<p class="wiz-empty-msg">No hay servicios disponibles</p>';
+	}).join('') || '<div class="wiz-empty-msg" style="grid-column:1/-1">No hay servicios disponibles para esta sede</div>';
 
 	$('#wizContent').html(`
 		<div class="wiz-step-label">¿Qué servicio necesitas?</div>
@@ -773,36 +807,43 @@ function _wizStep4() {
 }
 
 function _wizRenderCalStep4() {
-	const todayStr = moment().format('YYYY-MM-DD');
-	const selStr   = _wiz.fecha || todayStr;
-	const lastDay  = _wizCalDate.clone().endOf('month').date();
-	const mes      = _wizCalDate.clone().locale('es').format('MMMM');
-	const mesCap   = mes.charAt(0).toUpperCase() + mes.slice(1);
-	const anio     = _wizCalDate.format('YYYY');
+	const todayStr    = moment().format('YYYY-MM-DD');
+	const selStr      = _wiz.fecha || todayStr;
 	const esMesActual = _wizCalDate.format('YYYY-MM') === moment().format('YYYY-MM');
+	const lastDay     = _wizCalDate.clone().endOf('month').date();
+	const mes         = _wizCalDate.clone().locale('es').format('MMMM');
+	const mesCap      = mes.charAt(0).toUpperCase() + mes.slice(1);
+	const anio        = _wizCalDate.format('YYYY');
 
-	let daysHtml = '';
+	// Construir lista de fechas: en mes actual solo desde hoy; rellenar con días del siguiente mes
+	const dates = [];
 	for (let d = 1; d <= lastDay; d++) {
-		const ds     = _wizCalDate.clone().date(d).format('YYYY-MM-DD');
-		const m      = _wizCalDate.clone().date(d);
-		const isPast = ds < todayStr;
-		const isSel  = ds === selStr && !isPast;
-		const isToday = ds === todayStr;
-		const dow    = m.locale('es').format('ddd').replace('.', '').toUpperCase();
-
-		let cls = 'wiz-day-item';
-		if (isPast)  cls += ' past';
-		if (isToday) cls += ' today';
-		if (isSel)   cls += ' selected';
-
-		daysHtml += `<div class="${cls}" data-date="${ds}">
-			<div class="wiz-day-dow">${dow}</div>
-			<div class="wiz-day-num">${d}</div>
-		</div>`;
+		const ds = _wizCalDate.clone().date(d).format('YYYY-MM-DD');
+		if (!esMesActual || ds >= todayStr) dates.push(ds);
+	}
+	if (esMesActual) {
+		const faltantes  = lastDay - dates.length;
+		const nextMonth  = _wizCalDate.clone().add(1, 'month');
+		for (let d = 1; d <= faltantes; d++) {
+			dates.push(nextMonth.clone().date(d).format('YYYY-MM-DD'));
+		}
 	}
 
-	const enMesSeleccionado = _wiz.fecha &&
-		moment(_wiz.fecha).format('YYYY-MM') === _wizCalDate.format('YYYY-MM');
+	const daysHtml = dates.map(ds => {
+		const m       = moment(ds);
+		const isToday = ds === todayStr;
+		const isSel   = ds === selStr;
+		const dow     = m.locale('es').format('ddd').replace('.', '').toUpperCase();
+		let cls = 'wiz-day-item';
+		if (isToday) cls += ' today';
+		if (isSel)   cls += ' selected';
+		return `<div class="${cls}" data-date="${ds}">
+			<div class="wiz-day-dow">${dow}</div>
+			<div class="wiz-day-num">${m.date()}</div>
+		</div>`;
+	}).join('');
+
+	const enMesSeleccionado = _wiz.fecha && dates.includes(_wiz.fecha);
 
 	$('#wizContent').html(`
 		<div class="wiz-step-label">Elige fecha y hora</div>
@@ -841,7 +882,6 @@ function _wizRenderCalStep4() {
 	});
 
 	$('#wizContent').off('click', '.wiz-day-item').on('click', '.wiz-day-item', async function () {
-		if ($(this).hasClass('past')) return;
 		$('.wiz-day-item').removeClass('selected');
 		$(this).addClass('selected');
 		_wiz.fecha = $(this).data('date');
@@ -875,10 +915,18 @@ async function _wizLoadTimes(dateStr) {
 				if (!ocupadas.includes(h)) ocupadas.push(h);
 			});
 
-		const horarios = (rHorario.data.valor.info || []).filter(h => h.ES_VIGENTE == 1);
+		const esHoy      = moment(dateStr).isSame(moment(), 'day');
+		const horaActual = esHoy ? moment().format('HH:mm') : null;
+
+		const horarios = (rHorario.data.valor.info || [])
+			.filter(h => h.ES_VIGENTE == 1)
+			.filter(h => !esHoy || h.DESCRIPCIONDETALLE > horaActual);
 
 		if (!horarios.length) {
-			$('#wizTimeGrid').html('<div class="wiz-time-empty">No hay horarios configurados</div>');
+			const msg = esHoy
+				? 'No hay horarios disponibles para hoy'
+				: 'No hay horarios configurados';
+			$('#wizTimeGrid').html(`<div class="wiz-time-empty">${msg}</div>`);
 			return;
 		}
 
@@ -943,6 +991,7 @@ async function _wizNext() {
 	switch (_wiz.step) {
 		case 1:
 			if (!_wiz.tipoClienteId) { toast('Selecciona el tipo de cliente'); return; }
+			if (!_wiz.sucursalId)    { toast('Selecciona una sede'); return; }
 			break;
 		case 2:
 			if (!_wiz.servicioId) { toast('Selecciona un servicio'); return; }
@@ -978,6 +1027,7 @@ async function _wizEnviar() {
 		fd.append('horaReserva',  _wiz.hora);
 		fd.append('comentario',   _wiz.comentario || '');
 		fd.append('tipoCliente',  _wiz.tipoClienteId);
+		fd.append('sucursal',     _wiz.sucursalId);
 		fd.append('sesId',        verSesion());
 
 		const r = await axios.post('/api/reserva/crear', fd, {
@@ -1038,6 +1088,10 @@ function _wizShowSuccess(mensaje) {
 				<div class="wiz-sum-row">
 					<span class="wiz-sum-key">Tipo</span>
 					<span class="wiz-sum-val">${_wiz.tipo || '—'}</span>
+				</div>
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Sede</span>
+					<span class="wiz-sum-val">${_wiz.sucursalNombre || '—'}</span>
 				</div>
 				${_wiz.comentario ? `
 				<div class="wiz-sum-row">

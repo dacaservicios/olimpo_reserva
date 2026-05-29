@@ -32,6 +32,11 @@ function verSucursal(){
     return sesion;
 }
 
+function verEmpresa(){
+    let sesion=$("#userEmpresa").val();
+    return sesion;
+}
+
 function verNivel(){
     let sesion=$("#userNivel").val();
     return sesion;

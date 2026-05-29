@@ -25,7 +25,8 @@ const login = async (ip,server,body)=>{
         const token=jwt.sign({
             data:{
                 id : datos.ID_CLIENTE,
-                idSucursal : datos.ID_SUCURSAL
+                idSucursal : datos.ID_SUCURSAL,
+                idEmpresa : datos.ID_EMPRESA,
             }
         },
         config.SEED,
@@ -46,6 +47,7 @@ const login = async (ip,server,body)=>{
             resultado : true,
             id : datos.ID_CLIENTE,
             idSucursal : datos.ID_SUCURSAL,
+            idEmpresa : datos.ID_EMPRESA,
             token:token,
             mensaje : 'Ingreso exitoso'
         };

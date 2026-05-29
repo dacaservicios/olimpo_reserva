@@ -205,6 +205,7 @@ const schemaReserva=joi.object({
     horaReserva: joi.string().min(5).max(5).required(),
     comentario: joi.string().min(0).max(250).allow(''),
     tipoCliente: joi.number().allow('').optional(),
+    sucursal: joi.number().allow('').optional(),
     sesId:joi.number().required()
 });
 
