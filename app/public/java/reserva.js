@@ -770,7 +770,7 @@ function _wizStep2() {
 
 // ── Paso 3: Barbero ──
 function _wizStep3() {
-	const items = _wizData.barberos.map(b => {
+	const items = _wizData.barberos.filter(b => b.ID_SUCURSAL == _wiz.sucursalId).map(b => {
 		const sel    = b.ID_EMPLEADO == _wiz.barberoId ? ' selected' : '';
 		const nombre = `${b.APELLIDO_PATERNO || ''} ${b.APELLIDO_MATERNO || ''} ${b.NOMBRE || ''}`.replace(/\s+/g, ' ').trim();
 		const init   = ((b.APELLIDO_PATERNO || '')[0] || '').toUpperCase() + ((b.NOMBRE || '')[0] || '').toUpperCase();
