@@ -33,6 +33,7 @@ Tu reserva en nuestra barbería ha sido *registrada con éxito*. ✂️
 🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+💬 *Comentario:* ${(row[0][0].COMENTARIO===null)?'':row[0][0].COMENTARIO} 
 
 📍 Te esperamos puntualmente para darte el mejor servicio.
 Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
@@ -54,6 +55,7 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 👤 *Cliente:* ${row[0][0].CLIENTE}
 ✂️ *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+💬 *Comentario:* ${(row[0][0].COMENTARIO===null)?'':row[0][0].COMENTARIO} 
 
 📅 ${moment(row[0][0].FECHA_RESERVA).format('DD/MM/YYYY')}
 🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
@@ -103,6 +105,7 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Nueva fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Nueva hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+💬 *Comentario:* ${(row[0][0].COMENTARIO===null)?'':row[0][0].COMENTARIO}   
 
 📍 ¡Gracias por avisarnos! Te esperamos con la misma energía de siempre. 💈
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
@@ -121,6 +124,7 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 
 👤 *Cliente:* ${row[0][0].CLIENTE}
 ✂️ *Servicio:* ${row[0][0].NOMBRE_SERVICIO+((row[0][0].DESCRIPCION_SERVICIO===null)?'':" - "+row[0][0].DESCRIPCION_SERVICIO)}
+💬 *Comentario:* ${(row[0][0].COMENTARIO===null)?'':row[0][0].COMENTARIO} 
 
 📅 ${moment(row[0][0].FECHA_RESERVA).format('DD/MM/YYYY')}
 🕒 ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
@@ -170,6 +174,7 @@ Tu reserva en nuestra barbería ha sido *modificada con éxito*. ✂️
 🧔 *Barbero:* ${row[0][0].EMPLEADO}
 📅 *Nueva fecha:* ${moment(row[0][0].FECHA_RESERVA).format('dddd, DD [de] MMMM [del] YYYY')}
 🕒 *Nueva hora:* ${moment(row[0][0].FECHA_RESERVA).format('hh:mm A')}
+ 
 
 📍 ¡Gracias por avisarnos! Te esperamos con la misma energía de siempre. 💈
 Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.trim(),
