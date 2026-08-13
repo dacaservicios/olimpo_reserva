@@ -29,6 +29,7 @@
 | `CELULAR_EMPLEADO` | Celular del barbero (para WhatsApp) |
 | `NRO_WHATSAPP` | Número de la sucursal (sender de WhatsApp, con prefijo 51) |
 | `COLOR` | Color del barbero (para borde de tarjeta) |
+| `NOMBRE_SUCURSAL` | Nombre de la sede de la reserva (`MAE_SUCURSAL.NOMB_SUCURSAL`) — agregado 2026-08-13, se muestra en el detalle de reserva |
 
 > **Crítico:** El alias del JOIN de TIPO_PARAMETRO_DETALLE debe llamarse `DESC_TIPO_CLIENTE` (NO `TIPO_CLIENTE`) para evitar `DUPLICATE FIELD NAME` — la columna `TIPO_CLIENTE` ya existe en `TR.*`.
 
@@ -149,11 +150,13 @@ let _resDetalle;          // reserva seleccionada
 
 | Paso | Pregunta | BD consultada | Estado guardado |
 |---|---|---|---|
-| 1 | ¿Para quién? | `parametro/detalle/listar/64` | `_wiz.tipoClienteId`, `_wiz.tipo` |
-| 2 | ¿Qué servicio? | `serviciosucursal/listar` | `_wiz.servicioId`, `_wiz.servicioNombre` |
-| 3 | ¿Qué barbero? | `empleado/listar` (filtrado por sucursal) | `_wiz.barberoId`, `_wiz.barberoNombre` |
+| 1 | ¿Para quién? + ¿En qué sede? | `parametro/detalle/listar/64` + `sucursal/listar/:idEmpresa` | `_wiz.tipoClienteId`, `_wiz.tipo`, `_wiz.sucursalId` |
+| 2 | ¿Qué servicio? | `serviciosucursal/listar` (filtrado en frontend por `_wiz.sucursalId`) | `_wiz.servicioId`, `_wiz.servicioNombre` |
+| 3 | ¿Qué barbero? | `empleado/listar` (filtrado en frontend por `_wiz.sucursalId`) | `_wiz.barberoId`, `_wiz.barberoNombre` |
 | 4 | ¿Cuándo? | `reserva/listar/hora` + `parametro/detalle/listar/62` | `_wiz.fecha`, `_wiz.hora` |
 | 5 | Confirmar datos | `cliente/listar` | `_wiz.clienteId`, `_wiz.comentario` |
+
+**Paso 1 — selección de sede:** el cliente elige explícitamente la sucursal entre las de su empresa (`_wizData.sucursales`, cargada al abrir el wizard). Ya no se fija únicamente desde `#userSucursal` de la sesión. Al cambiar de sede se resetea el servicio ya seleccionado. Los pasos 2 y 3 filtran sus listas (`_wizData.servicios` / `_wizData.barberos`) por `ID_SUCURSAL == _wiz.sucursalId` en el cliente — ver `.claudedoc/historico.md` ("Wizard — selección de sede y filtrado dinámico por sucursal").
 
 **Envío:** `POST /api/reserva/crear` con body:
 ```json
@@ -227,21 +230,24 @@ La pantalla de éxito del wizard detecta el aviso de fallo buscando `"WhatsApp"`
 
 ## Filtros de datos por sucursal
 
-Los endpoints que alimentan el wizard filtran por la sucursal del cliente logueado:
-- Barberos: `GET /api/empleado/listar/:id/:sesId` — el SP filtra por `ID_SUCURSAL` de la sesión
-- Servicios: `GET /api/serviciosucursal/listar/:id/:sesId` — ídem
-- Reservas del día: `GET /api/reserva/listar/0/:sesId` — filtra por `ID_SUCURSAL`
+- Barberos: `GET /api/empleado/listar/:id/:sesId` (tabla `empleado_reserva`) devuelve los empleados de **toda la empresa** con su `ID_SUCURSAL` real; el wizard (`_wizStep3`) filtra en el frontend por la sede elegida en el Paso 1 (`_wiz.sucursalId`).
+- Servicios: `GET /api/serviciosucursal/listar/:id/:sesId` — mismo patrón: se cargan todos y `_wizStep2` filtra en frontend por `_wiz.sucursalId`.
+- Reservas del cliente (vista principal + Mis Citas): `GET /api/reserva/listar/0/:sesId` (tabla `reserva_cliente`) — filtra únicamente por `TR.ID_CLIENTE=_idSesion`. **Corregido 2026-08-13**: antes filtraba también `AND TR.ID_SUCURSAL=@SUCURSAL` (la sede del *perfil* del cliente en `MAE_CLIENTE`), lo que ocultaba reservas hechas en una sede distinta a la de su perfil. Ver `.claudedoc/historico.md`.
+- Sucursales del wizard: `GET /api/sucursal/listar/:idEmpresa/:sesId` — lista las sedes de la empresa del cliente, usada para poblar el selector del Paso 1.
 
-El `sesId` es el `ID_CLIENTE` de la sesión; el SP recupera `ID_SUCURSAL` internamente.
+El `sesId` es el `ID_CLIENTE` de la sesión, usado como parámetro de auditoría/contexto en los SPs; el filtrado por sede en el wizard ocurre en el cliente (JS), no en el SP.
 
 ---
 
-## Edición de reserva — campos inmutables
+## Edición y cancelación de reserva — deshabilitado para el cliente
 
-`PUT /api/reserva/editar/:id` (guardarCambiosReserva):
-- **Solo puede cambiar:** `FECHA_RESERVA`, `COMENTARIO`
-- **No cambia:** `ID_CLIENTE`, `ID_EMPLEADO`, `ID_SERVICIO_SUCURSAL`, `TIPO_CLIENTE`
-- El `tipoCliente` se guarda en `data-tipocliente` del form de edición (tomado de la reserva original)
+**Regla de negocio (2026-08-13):** el cliente **no puede editar ni cancelar** su reserva desde la app — los botones correspondientes fueron removidos de `verDetalleReserva()`. Si necesita un cambio, debe contactar al admin de la sucursal por WhatsApp (`NRO_WHATSAPP`). Ver `.claudedoc/historico.md`.
+
+El endpoint y las funciones siguen existiendo en el código (no alcanzables desde la UI del cliente):
+- `PUT /api/reserva/editar/:id` (`guardarCambiosReserva`):
+  - **Solo podía cambiar:** `FECHA_RESERVA`, `COMENTARIO`
+  - **No cambiaba:** `ID_CLIENTE`, `ID_EMPLEADO`, `ID_SERVICIO_SUCURSAL`, `TIPO_CLIENTE`
+  - El `tipoCliente` se guardaba en `data-tipocliente` del form de edición (tomado de la reserva original)
 
 ---
 
@@ -253,8 +259,10 @@ El `sesId` es el `ID_CLIENTE` de la sesión; el SP recupera `ID_SUCURSAL` intern
 | Clientes | Listo | `clienteApi` | — |
 | Acceso (auth) | Listo | `accesoApi` + `inicioApi` | `login.ejs` |
 | Dashboard | Listo | `inicioApi` | cron integrado |
-| Empleados | Parcial | `empleadoApi` (solo listar/buscar) | — |
-| Parámetros | Parcial | `parametroApi` (solo listar detalle) | — |
-| Servicios Sucursal | Parcial | `serviciosucursalApi` (solo listar) | — |
-| Sucursales | Parcial | `sucursalApi` (solo listar) | — |
-| Facturación | En progreso | — (código comentado) | — |
+| Empleados | Solo lectura (por diseño) | `empleadoApi` (listar/buscar) | — |
+| Parámetros | Solo lectura (por diseño) | `parametroApi` (listar detalle) | — |
+| Servicios Sucursal | Solo lectura (por diseño) | `serviciosucursalApi` (listar) | — |
+| Sucursales | Solo lectura (por diseño) | `sucursalApi` (listar) | — |
+
+> Empleados, Parámetros, Servicios Sucursal y Sucursales son de solo lectura **intencionalmente**: `olimpo_reserva` es la app cliente, y su CRUD administrativo vive en una app administrativa aparte (fuera de este repo). No es un módulo "a medio hacer".
+| Facturación | Sin implementar | — (solo credenciales en `.env`, sin uso) | — |

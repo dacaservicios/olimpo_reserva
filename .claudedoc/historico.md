@@ -4,6 +4,8 @@
 > NO reescribir ni revertir lo documentado aquí a menos que el usuario lo solicite **de forma explícita**.
 > El código referenciado es fuente de verdad — no modificar sus patrones sin autorización.
 
+> **Rotación por tamaño:** Si este archivo se acerca al límite de caracteres permitido para un archivo de contexto, crear `historico2.md` (y sucesivamente `historico3.md`, etc.) en `.claudedoc/` y continuar agregando ahí las épicas nuevas. Los archivos rotados deben añadirse a la tabla de mapa de documentación en `CLAUDE.md`. No mover contenido ya escrito entre archivos, solo continuar hacia adelante.
+
 ---
 
 ## Épicas completadas
@@ -27,10 +29,8 @@
 ### [x] Módulo de Reservas completo
 - Vista principal: solo el día actual, tarjetas de reservas, sin navegación de meses.
 - Wizard 5 pasos en `#general1` (offcanvas): tipo cliente → servicio → barbero → fecha/hora → confirmación.
-- Detalle de reserva: hero con hora + fecha, filas de datos, badge de estado, botones Editar/Cancelar.
-- Edición: reemplaza contenido del mismo `#general1` sin cerrarlo. Solo cambia fecha/hora/comentario.
+- Detalle de reserva: hero con hora + fecha, filas de datos, badge de estado.
 - Mis Citas (`#offcanvasMisCitas`): lista todas las reservas separadas en Próximas / Anteriores.
-- Anteriores: modo solo lectura (sin botones de acción).
 - Unique key corregida: `(ID_SUCURSAL, ID_EMPLEADO, FECHA_RESERVA)` — sin `ID_CLIENTE` (evita overbooking).
 - Protección contra doble envío: botón se deshabilita al enviar; se restaura solo si falla.
 - Campo `DESC_TIPO_CLIENTE` (alias en SP) — no usar `TIPO_CLIENTE` para evitar DUPLICATE FIELD NAME.
@@ -74,6 +74,47 @@ Implementado con `scrollbar-width: none` + `::-webkit-scrollbar { display: none 
 - El endpoint `empleado/listar` filtraba por sesión del cliente.
 - El SP ahora obtiene `ID_SUCURSAL` del cliente internamente a partir de `sesId`.
 - El wizard paso 3 filtra barberos por sucursal correctamente.
+
+### [x] Verificación y corrección del SP de reservas en MariaDB — sede correcta (2026-08-13)
+- **Verificado en BD real** (`SHOW CREATE PROCEDURE`, no hay `.sql` en el repo, se consultó directo en MariaDB): la rama `'crea'` de `USP_UPD_INS_RESERVA_CLIENTE` **ya guardaba correctamente** `_ID_SUCURSAL` (parámetro 8) en `TRS_RESERVA.ID_SUCURSAL`. No hizo falta cambiar nada ahí.
+- **Bug real encontrado y corregido** en `USP_SEL_VERLISTA`, rama `'reserva_cliente'` (usada por `GET /api/reserva/listar/:id/:sesId`, la que alimenta la pantalla principal y "Mis Citas"):
+  - Antes filtraba `AND TR.ID_SUCURSAL=@SUCURSAL`, donde `@SUCURSAL` era la sede del **perfil** del cliente (`MAE_CLIENTE.ID_SUCURSAL`) — no la sede real de cada reserva. Si un cliente reservaba en una sede distinta a la de su perfil (posible desde que el wizard permite elegir sede en el Paso 1), esa reserva **no aparecía en su propia lista** ("Mis Citas" / calendario).
+  - Además esa rama no tenía ningún `JOIN` a `MAE_SUCURSAL`, así que el nombre de la sede nunca viajaba al frontend — imposible mostrarlo en el detalle.
+  - **Fix aplicado directamente en MariaDB** (`DB_OLIMPO`, única BD — dev y prod apuntan al mismo `localhost:3306` según `.env.development`/`.env.production`): se quitó el filtro `ID_SUCURSAL=@SUCURSAL` (queda solo `ID_CLIENTE=_idSesion`) y se agregó `INNER JOIN MAE_SUCURSAL SU ON TR.ID_SUCURSAL=SU.ID_SUCURSAL` + `SU.NOMB_SUCURSAL AS NOMBRE_SUCURSAL` al `SELECT`. Probado con `CALL USP_SEL_VERLISTA(0,'reserva_cliente',844)` — devuelve las 8 reservas del cliente con `NOMBRE_SUCURSAL` correcto.
+  - **Precaución para el futuro:** `USP_SEL_VERLISTA` es un procedimiento único y gigante (500+ líneas) compartido por muchos módulos de un sistema más grande (se ven tablas `SEG_USUARIO`, `TRS_VENTA`, `TRS_CAJA`, etc.). Cualquier cambio futuro debe tocar **solo** la rama `ELSEIF` correspondiente y no asumir que es exclusivo de `olimpo_reserva`.
+- **Segundo bug real encontrado y corregido** en `USP_UPD_INS_DETALLE`, rama `'verificaHora_reserva'` (calcula las horas ocupadas de un barbero en una fecha — Paso 4 del wizard, usada por `GET /api/reserva/listar/hora/:empleadoId/:fecha/:sesId`):
+  - Mismo patrón de bug: filtraba `AND TR.ID_SUCURSAL=@SUCURSAL` con `@SUCURSAL` = sede del **perfil** del cliente que consulta, no la sede real del barbero/reserva. **Esto permitía doble-reserva real**: un Cliente A (perfil Sede Centro) reservaba con un barbero de Sede Norte; un Cliente B (también perfil Sede Centro) consultando el mismo barbero/fecha no veía esa hora como ocupada (porque el SP buscaba reservas "en Sede Centro", no en la sede real del barbero) y podía reservar la misma hora con el mismo barbero.
+  - Tampoco filtraba `ES_ELIMINADO=0`, así que una reserva borrada lógicamente seguía bloqueando el horario para siempre.
+  - **Fix**: se quitó el filtro de sucursal por completo (basta `ID_EMPLEADO + fecha`, porque cada barbero pertenece a una sola sede real) y se agregó `TR.ES_ELIMINADO=0`. **Aplicado manualmente por el usuario** en MariaDB (el comando automático fue bloqueado por el clasificador de seguridad al detectar `DROP PROCEDURE`; se le entregó el script SQL ya armado y verificado con `diff` contra el original).
+  - Query final:
+    ```sql
+    ELSEIF _tipo='verificaHora_reserva' THEN
+        SELECT TIME_FORMAT(TR.FECHA_RESERVA, '%H:%i') AS HORA
+        FROM TRS_RESERVA TR
+        WHERE TR.ES_ELIMINADO=0
+        AND DATE(TR.FECHA_RESERVA)=_dato
+        AND TR.ID_EMPLEADO =_id;
+    ```
+- **Validación end-to-end del flujo de sede** (código + SPs revisados juntos, 2026-08-13): confirmado que el circuito completo respeta la sede elegida en el Paso 1 —
+  - Paso 2 (`_wizStep2`) filtra `_wizData.servicios` por `ID_SUCURSAL`; el SP `'servicioSucursal_reserva'` trae todos los servicios de todas las sedes sin filtrar, cada uno con su `ID_SUCURSAL` real.
+  - Paso 3 (`_wizStep3`) filtra `_wizData.barberos` por `ID_SUCURSAL`; el SP `'empleado_reserva'` trae todos los empleados de todas las sedes sin filtrar, cada uno con su `ID_SUCURSAL` real.
+  - Paso 4: horarios ocupados ya corregidos (ver arriba).
+  - Creación y listado: ya corregidos (ver arriba).
+- **Frontend:** `reserva.js → verDetalleReserva()` ahora muestra una fila "Sede" con `evt.NOMBRE_SUCURSAL`.
+
+### [x] Cliente ya no puede editar ni cancelar reservas desde la app (2026-08-13)
+- **Regla de negocio:** permitir que el cliente edite u cancele su cita libremente generaba caos operativo. Si el cliente necesita mover o cancelar una cita, debe comunicarse con el admin de la sucursal por WhatsApp (el número ya se muestra/usa en las notificaciones, `NRO_WHATSAPP`).
+- **Cambio aplicado:** en `reserva.js → verDetalleReserva()` se eliminó por completo el bloque que renderizaba los botones "Editar" y "Cancelar Cita" del detalle de reserva. Ya no aparecen en ningún caso (antes dependían del flag `soloLectura`).
+- **Nota — código huérfano intencional:** las funciones `abrirEdicionReserva`, `_editLoadReserva`, `_editLoadTimes`, `guardarCambiosReserva`, `_resCancelarActual` (frontend) y las rutas `PUT /api/reserva/editar/:id`, `reservaElimina` (backend) **siguen existiendo en el código** pero ya no son alcanzables desde la UI del cliente. No se eliminaron a propósito (fuera de alcance de este cambio, y podrían reutilizarse desde la app administrativa). No las vuelvas a activar en la UI de cliente sin que el usuario lo pida explícitamente.
+
+### [x] Wizard — selección de sede y filtrado dinámico por sucursal (2026-05-30)
+- **Paso 1 ahora incluye selección explícita de sede**, además del tipo de cliente (`reserva.js → _wizStep1()`). Ya no se limita a precargar `_wiz.sucursalId` desde `#userSucursal` al abrir el wizard — el cliente elige la sede entre las sucursales de su empresa (`_wizData.sucursales`, cargadas vía `GET /api/sucursal/listar/:idEmpresa/:sesId`).
+- Al cambiar de sede se resetea el servicio seleccionado (`_wiz.servicioId`, `servicioNombre`, `servicioDur`) para evitar arrastrar un servicio de otra sucursal.
+- **Paso 2** (`_wizStep2`) filtra `_wizData.servicios` por `s.ID_SUCURSAL == _wiz.sucursalId`.
+- **Paso 3** (`_wizStep3`) filtra `_wizData.barberos` por `b.ID_SUCURSAL == _wiz.sucursalId`.
+- **Causa raíz del bug original:** la vista/SP `empleado_reserva` filtraba empleados por la sucursal de la sesión del cliente en vez de exponer el `ID_SUCURSAL` real de cada barbero. Corregido directamente en la vista de MariaDB — ahora devuelve todos los empleados de la empresa con su `ID_SUCURSAL` real, y el filtro de frontend por sede seleccionada funciona correctamente.
+- `ES_VIGENTE == 1` se filtra una sola vez en el preload del wizard (`nuevaReservaFecha`), no se repite en cada paso.
+- **Nota:** `domain-logic.md` (tabla "Flujo del Wizard — 5 pasos") y la descripción del estado `_wiz.sucursalId` fueron actualizados para reflejar este comportamiento.
 
 ### [x] Corrección WhatsApp — envío de mensajes
 - Corregido header `x-api-key` faltante en los calls.

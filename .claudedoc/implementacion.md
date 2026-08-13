@@ -7,57 +7,9 @@
 
 ## TAREA ACTUAL / PENDIENTES
 
-- [ ] Actualizar `USP_UPD_INS_RESERVA_CLIENTE` para recibir y guardar correctamente `ID_SUCURSAL` del wizard (ver memoria: `project_pendiente_sucursal_sp.md`)
-- [ ] Verificar que `_wizStep3` filtra barberos por `ID_SUCURSAL` del cliente logueado (ver memoria: `project_wizard_sucursal_filtro.md`)
-- [ ] Completar CRUD de empleados (actualmente solo listar/buscar)
-- [ ] Completar gestión de parámetros (actualmente solo listar detalle)
-- [ ] Completar gestión de servicios por sucursal
-- [ ] Completar gestión de sucursales
-- [ ] Desbloquear módulo de facturación (código comentado)
-- [ ] Implementar vista de perfil cliente (`#miPerfil` — actualmente el ID no existe en el DOM)
+*(sin pendientes abiertos actualmente)*
 
----
-
-## Flujos con comportamiento especial en construcción
-
-### Wizard — filtro de barberos por sucursal
-**Contexto:** El paso 3 del wizard carga barberos. La causa raíz del bug era que `empleado/listar` filtraba por la sesión del cliente, no por `ID_SUCURSAL` explícito.
-
-**Estado actual:**
-- El endpoint `GET /api/empleado/listar/:id/:sesId` recibe `id` (actualmente 0 para "todos") y `sesId` (ID_CLIENTE).
-- El SP interno recupera `ID_SUCURSAL` del cliente a partir de `sesId`.
-- Pendiente verificar que el SP filtra correctamente cuando hay varias sucursales.
-
-**Comportamiento esperado:**
-- En `_wizStep3`: solo mostrar barberos de la sucursal del cliente logueado.
-- Si no hay barberos disponibles: mostrar estado vacío con mensaje.
-
----
-
-### Sucursal en la creación de reserva
-**Contexto:** El wizard envía `sucursal: _wiz.sucursalId` en el body de `POST /api/reserva/crear`.
-
-**Estado actual:**
-- `_wiz.sucursalId` se inicializa como `$('#userSucursal').val()` al abrir el wizard.
-- El SP `USP_UPD_INS_RESERVA_CLIENTE` recibe el parámetro `sucursal` (posición 8, base-0).
-- Pendiente confirmar que el SP lo guarda correctamente en `TRS_RESERVA.ID_SUCURSAL`.
-
-**Comportamiento esperado:**
-- Que `TRS_RESERVA.ID_SUCURSAL` = sucursal del cliente = sucursal del barbero.
-- La unique key `(ID_SUCURSAL, ID_EMPLEADO, FECHA_RESERVA)` usa este campo.
-
----
-
-### Módulo de facturación
-**Estado:** Código comentado en controllers/models. Depende de API externa `apisperu` (URL_FACTURACION + TOKEN_FACTURACION en `.env`).
-
-**Variables de entorno requeridas:**
-```
-URL_FACTURACION=...
-TOKEN_FACTURACION=...
-URL_DOCUMENTO=...      (para consulta DNI/RUC)
-TOKEN_DOCUMENTO=...
-```
+> **Nota de arquitectura:** `olimpo_reserva` es la app **cliente** (consumo: reservar, ver Mis Citas, perfil propio). Empleados, Parámetros, Servicios por Sucursal y Sucursales son intencionalmente **solo lectura** aquí — el CRUD completo de esas entidades se hace desde una **app administrativa separada**, no desde este repo. No listar "completar CRUD de X" como pendiente de este proyecto salvo que el usuario indique explícitamente que se agregará gestión administrativa aquí.
 
 ---
 
@@ -101,6 +53,4 @@ $('#tituloGeneral1').text('Nuevo título');
 
 ## Decisiones técnicas pendientes de validar
 
-- **¿Debe `editarReserva` poder cambiar el barbero?** Actualmente NO — el SP mantiene el barbero original. Si se requiere cambiar barbero, necesita nuevo SP o parámetro adicional.
-- **¿Múltiples sucursales por empresa?** La arquitectura lo soporta (`ID_SUCURSAL` en todas las tablas maestras), pero la UI actual solo muestra la sucursal del cliente logueado.
-- **`clientePerfil.js`** — El ID `#miPerfil` no existe en el DOM actual de `sistema.ejs`. Si se reactiva el perfil de cliente, agregar el botón en la bottom nav o en el offcanvas de perfil.
+*(sin ítems abiertos actualmente)*

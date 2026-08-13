@@ -15,12 +15,6 @@ $(document).ready(function() {
         $('.main-profile-menu').removeClass('show')
     });
     
-    $('#miPerfil').off( 'click');
-    $('#miPerfil').on( 'click',function () {
-        miPerfil();
-        $('.main-profile-menu').removeClass('show')
-    });
-
     $('#cambiaPassword').off('click');
 });
 
@@ -87,17 +81,6 @@ function salir(){
 function vistaCambiaPassword(){
     try{
 		$('#jsPropio').html("<script src='/java/cambiaPassword.js?"+moment().format('DDMMYYYYHHmmss')+"'></script>");
-    }catch (err) {
-		desbloquea();	
-		message=err.response.data.error.message;
-		errno=err.response.data.error.errno;
-		mensajeSistema(message);
-	}
-}
-
-function miPerfil(){
-    try{
-		$('#jsPropio').html("<script src='/java/clientePerfil.js?"+moment().format('DDMMYYYYHHmmss')+"'></script>");
     }catch (err) {
 		desbloquea();	
 		message=err.response.data.error.message;

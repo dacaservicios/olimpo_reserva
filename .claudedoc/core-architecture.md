@@ -149,7 +149,6 @@ $('#jsPropio').html('<script src="/java/[modulo].js"></script>')
 Scripts cargados dinámicamente:
 - `/java/reserva.js` → vista y wizard de reservas
 - `/java/cambiaPassword.js` → formulario cambiar contraseña (LEGACY, reemplazado por offcanvasPassword)
-- `/java/clientePerfil.js` → perfil cliente (pendiente — `#miPerfil` no existe en DOM actual)
 
 ---
 

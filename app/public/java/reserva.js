@@ -190,7 +190,7 @@ function _renderCards(dateStr, showAddBtn = true) {
 					<i class="las la-user"></i> ${barbero}
 				</div>
 			</div>
-			${!isPast ? '<i class="las la-pen md-res-edit"></i>' : ''}
+			${!isPast ? '<i class="las la-eye md-res-edit"></i>' : ''}
 		</div>`;
 	}).join('');
 
@@ -222,6 +222,7 @@ function verDetalleReserva(evt, soloLectura = false) {
 	const cliente  = `${evt.PATERNO_CLIENTE || ''} ${evt.NOMBRE_CLIENTE || ''}`.trim();
 	const barbero  = evt.NOMBRE_EMPLEADO || '—';
 	const servicio = evt.NOMBRE || '—';
+	const sede     = evt.NOMBRE_SUCURSAL || '—';
 	const color    = evt.COLOR || 'var(--md-primary)';
 	const id       = evt.ID_RESERVA;
 
@@ -243,6 +244,10 @@ function verDetalleReserva(evt, soloLectura = false) {
 				<div class="res-detail-row">
 					<span class="res-detail-key"><i class="las la-user"></i> Cliente</span>
 					<span class="res-detail-val">${cliente}</span>
+				</div>
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-map-marker-alt"></i> Sede</span>
+					<span class="res-detail-val">${sede}</span>
 				</div>
 				<div class="res-detail-row">
 					<span class="res-detail-key"><i class="las la-cut"></i> Servicio</span>
@@ -271,16 +276,6 @@ function verDetalleReserva(evt, soloLectura = false) {
 					<span class="res-detail-val">${evt.COMENTARIO}</span>
 				</div>` : ''}
 			</div>
-
-			${!soloLectura ? `
-			<div class="res-detail-actions">
-				<button class="res-btn-edit" onclick="abrirEdicionReserva(${id})">
-					<i class="las la-pen"></i> Editar
-				</button>
-				<button class="res-btn-cancel" onclick="_resCancelarActual()">
-					<i class="las la-times-circle"></i> Cancelar Cita
-				</button>
-			</div>` : ''}
 		</div>`
 	});
 }
@@ -388,7 +383,7 @@ function _misCitasCard(e, isPast) {
 				<i class="las la-user"></i> ${barbero}
 			</div>
 		</div>
-		${!isPast ? '<i class="las la-pen md-res-edit"></i>' : ''}
+		${!isPast ? '<i class="las la-eye md-res-edit"></i>' : ''}
 	</div>`;
 }
 
