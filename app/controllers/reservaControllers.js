@@ -1,4 +1,4 @@
-const {crearReserva,editarReserva,buscarReserva,listarReserva,estadoReserva,eliminarReserva,editarReservaDD,listarReservaDetalle} = require('../models/reservaModels');
+const {crearReserva,editarReserva,buscarReserva,listarReserva,estadoReserva,eliminarReserva,editarReservaDD,listarReservaDetalle,obtenerMensajeReserva} = require('../models/reservaModels');
 const path = require('path');
 
 const listar=(req, res)=>{
@@ -40,6 +40,26 @@ const listarHora=(req, res)=>{
             }
         });
     }); 
+}
+
+const mensajeSucursal=(req, res)=>{
+    const idSucursal =  req.params.idSucursal;
+    const sesId=req.params.sesId;
+    obtenerMensajeReserva(idSucursal,sesId)
+    .then(valor => {
+        res.json({
+            valor : valor
+        });
+    })
+    .catch(error => {
+        res.status(400).json({
+            error : {
+                message:error.message,
+                errno: error.errno,
+                code : error.code
+            }
+        });
+    });
 }
 
 const buscar=(req, res)=>{
@@ -177,5 +197,6 @@ module.exports = {
     editarDD,
     estado,
     eliminar,
-    listarHora
+    listarHora,
+    mensajeSucursal
 }

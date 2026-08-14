@@ -984,6 +984,7 @@ function _wizStep5() {
 			<div class="wiz-field-label"><i class="las la-comment-alt"></i> Comentario</div>
 			<input type="text" id="wizComentario" class="wiz-field-input" placeholder="Opcional..." value="${_wiz.comentario || ''}">
 		</div>
+		<div class="wiz-field-group" id="wizMensajeSucursalBox" style="display:none"></div>
 		<div class="wiz-field-group">
 			<div class="wiz-field-label"><i class="las la-image"></i> Foto de referencia (opcional)</div>
 			<div id="wizImagenBox">${_wizImagenBoxHtml()}</div>
@@ -991,6 +992,8 @@ function _wizStep5() {
 			<input type="file" id="wizImagenGaleria" accept="image/*" style="display:none">
 		</div>
 	`);
+
+	_wizLoadMensajeSucursal();
 
 	$('#wizContent').off('click', '#wizBtnCamara').on('click', '#wizBtnCamara', () => $('#wizImagenCamara').trigger('click'));
 	$('#wizContent').off('click', '#wizBtnGaleria').on('click', '#wizBtnGaleria', () => $('#wizImagenGaleria').trigger('click'));
@@ -1002,6 +1005,36 @@ function _wizStep5() {
 		_wiz.imagenPreview = '';
 		$('#wizImagenBox').html(_wizImagenBoxHtml());
 	});
+}
+
+async function _wizLoadMensajeSucursal() {
+	if (!_wiz.sucursalId) { $('#wizMensajeSucursalBox').hide(); return; }
+
+	if (!_wizData.mensajesSucursal) _wizData.mensajesSucursal = {};
+	let msg = _wizData.mensajesSucursal[_wiz.sucursalId];
+
+	if (msg === undefined) {
+		try {
+			const r = await axios.get(`/api/reserva/mensaje/${_wiz.sucursalId}/${verSesion()}`, {
+				headers: { authorization: `Bearer ${verToken()}` }
+			});
+			msg = r.data.valor.info || null;
+		} catch (e) {
+			msg = null;
+		}
+		_wizData.mensajesSucursal[_wiz.sucursalId] = msg;
+	}
+
+	if (_wiz.step !== 5) return;
+
+	if (msg && msg.VALOR) {
+		$('#wizMensajeSucursalBox').html(`
+			<div class="wiz-field-label"><i class="las la-info-circle"></i> ${msg.DESCRIPCION || 'Aviso'}</div>
+			<div class="wiz-mensaje-sucursal">${msg.VALOR}</div>
+		`).show();
+	} else {
+		$('#wizMensajeSucursalBox').hide();
+	}
 }
 
 function _wizImagenBoxHtml() {

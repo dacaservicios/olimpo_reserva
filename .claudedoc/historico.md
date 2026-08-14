@@ -136,6 +136,27 @@ Implementado con `scrollbar-width: none` + `::-webkit-scrollbar { display: none 
 ### [x] Orden descendente en "Próximas" — Mis Citas (2026-08-13)
 - `abrirMisCitas()`: la sección "Próximas" ahora ordena descendente (la fecha futura más lejana primero, bajando hasta la más próxima a hoy). La sección "Anteriores" no cambió (ya era descendente, la más reciente del pasado primero).
 
+### [x] Mensaje configurable por sucursal en el paso 5 del wizard (2026-08-13)
+- **Requisito:** mostrar, entre el campo Comentario y la Foto de referencia (Paso 5), un texto configurable por sucursal (`TIPO_PARAMETRO_DETALLE_SUCURSAL`), filtrado por la sede elegida en el Paso 1 (`_wiz.sucursalId`).
+- **Parámetro fijo:** `ID_PARAMETRO_DETALLE=2571` (`TIPO_PARAMETRO_DETALLE` con `ID_PARAMETRO=65`, `ABREVIATURA='DMRE'`) — es el mismo para todas las sucursales; lo que cambia por sucursal es la fila correspondiente en `TIPO_PARAMETRO_DETALLE_SUCURSAL` (`DESCRIPCION`, `VALOR`), gestionada desde la app administrativa (`USP_UPD_INS_PARAMETRO_DETALLE`, acción `'crea'` crea automáticamente una fila por cada `MAE_SUCURSAL`).
+- **Base de datos (verificado y aplicado directamente en MariaDB, `DB_OLIMPO`):** nueva rama `_tipo='mensajeReserva'` en `USP_UPD_INS_DETALLE`:
+  ```sql
+  ELSEIF _tipo='mensajeReserva' THEN
+      SELECT PDS.DESCRIPCION, PDS.VALOR
+      FROM TIPO_PARAMETRO_DETALLE_SUCURSAL PDS
+      WHERE PDS.ID_PARAMETRO_DETALLE=_idDetalle
+      AND PDS.ID_SUCURSAL=_id;
+  ```
+  Llamada: `CALL USP_UPD_INS_DETALLE(idSucursal, 2571, '', 'mensajeReserva', sesId)`. Se evaluaron dos alternativas antes de esta (agregar rama nueva a `USP_SEL_VERLISTA`, o resolver la PK de `TIPO_PARAMETRO_DETALLE_SUCURSAL` en dos pasos vía el bloque `miParametroDetalle` de `USP_SEL_VERLISTAID`) — se descartaron porque ese bloque filtra por la PK de la fila (`ID_PARAMETRO_DETALLE_SUCURSAL`), que el wizard no conoce (solo conoce `ID_SUCURSAL`). Se optó por `USP_UPD_INS_DETALLE` (que ya sigue este patrón exacto de "2 IDs → 1 fila" para `verificaHora_reserva`) por indicación explícita del usuario.
+- **Backend:**
+  - `reservaModels.js`: nueva función `obtenerMensajeReserva(idSucursal, sesId)`, con `ID_PARAMETRO_DETALLE_MENSAJE_RESERVA=2571` como constante del módulo.
+  - `reservaControllers.js` / `reservaApi.js`: nueva ruta `GET /api/reserva/mensaje/:idSucursal/:sesId`.
+- **Frontend (`reserva.js`):**
+  - `_wizStep5()` agrega un contenedor vacío `#wizMensajeSucursalBox` (oculto por defecto) entre Comentario y Foto de referencia, y dispara `_wizLoadMensajeSucursal()` (no bloquea el render del resto del paso).
+  - `_wizLoadMensajeSucursal()`: pide `GET /api/reserva/mensaje/:sucursalId/:sesId`, cachea el resultado en `_wizData.mensajesSucursal[sucursalId]` (evita refetch si el cliente navega entre pasos), y solo pinta el bloque si `VALOR` no viene vacío/null — si la sucursal no tiene fila configurada, el bloque permanece oculto.
+  - CSS: nueva clase `.wiz-mensaje-sucursal` en `android.css` (tono dorado, mismo patrón que `.wiz-success-warn` pero con `--md-primary`).
+- **Verificado:** rama del SP probada por consola (`CALL USP_UPD_INS_DETALLE(2, 2571, '', 'mensajeReserva', 844)` y sucursal 11 devuelven la fila esperada; sucursal inexistente devuelve 0 filas sin error). Endpoint HTTP probado con JWT firmado manualmente contra el server de desarrollo ya corriendo (`nodemon`), confirmando el JSON de respuesta para sucursales 2, 11 y una inexistente.
+
 ### [x] Corrección WhatsApp — envío de mensajes
 - Corregido header `x-api-key` faltante en los calls.
 - Corregido campo `sender` con `NRO_WHATSAPP` de la sucursal.

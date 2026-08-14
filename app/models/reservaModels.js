@@ -337,12 +337,33 @@ const listarReservaDetalle = async(id, fecha,tabla,sesId)=>{
         sesId
     ]);
 
-    return { 
+    return {
         resultado : true,
         info : row[0],
         mensaje : '¡Exito!'
-    }; 
-    
+    };
+
+}
+
+const ID_PARAMETRO_DETALLE_MENSAJE_RESERVA = 2571;
+
+const obtenerMensajeReserva = async(idSucursal,sesId)=>{
+    const query = `CALL USP_UPD_INS_DETALLE(?, ?, ?, ? ,?)`;
+    const row =  await pool.query(query,
+    [
+        idSucursal,
+        ID_PARAMETRO_DETALLE_MENSAJE_RESERVA,
+        '',
+        'mensajeReserva',
+        sesId
+    ]);
+
+    return {
+        resultado : true,
+        info : row[0][0] || null,
+        mensaje : '¡Exito!'
+    };
+
 }
 
 module.exports = {
@@ -353,6 +374,7 @@ module.exports = {
     listarReserva,
     estadoReserva,
     eliminarReserva,
-    listarReservaDetalle
+    listarReservaDetalle,
+    obtenerMensajeReserva
 }
 

@@ -1504,6 +1504,11 @@ table tbody a.crud i { color: white; }
   padding: 10px 14px; margin-bottom: 16px; text-align: left; line-height: 1.5;
 }
 .wiz-success-warn i { margin-right: 6px; }
+.wiz-mensaje-sucursal {
+  font-size: 12px; color: var(--md-primary); background: rgba(201,162,39,.1);
+  border: 1px solid rgba(201,162,39,.3); border-radius: 10px;
+  padding: 10px 14px; line-height: 1.5; white-space: pre-line;
+}
 .wiz-success-summary {
   background: var(--md-surface-2); border-radius: 14px;
   width: 100%; margin-bottom: 24px; overflow: hidden;
