@@ -116,6 +116,26 @@ Implementado con `scrollbar-width: none` + `::-webkit-scrollbar { display: none 
 - `ES_VIGENTE == 1` se filtra una sola vez en el preload del wizard (`nuevaReservaFecha`), no se repite en cada paso.
 - **Nota:** `domain-logic.md` (tabla "Flujo del Wizard — 5 pasos") y la descripción del estado `_wiz.sucursalId` fueron actualizados para reflejar este comportamiento.
 
+### [x] Precio de servicio (Paso 2 del wizard) y foto de referencia + precio en resumen/detalle (2026-08-13)
+- **Precio en Paso 2:** cada tarjeta de servicio (`_wizStep2`) muestra `S/ {PRECIO}` bajo el nombre; el valor se captura en `_wiz.servicioPrecio` al seleccionar (dato ya presente en la respuesta de `servicioSucursal_reserva`, no requirió cambios de BD).
+- **Foto de referencia (Paso 5):** se agregó UI de adjuntar imagen con dos botones — "Tomar foto" (`<input type=file accept="image/*" capture="environment">`) y "Galería" (`<input type=file accept="image/*">`, sin `capture`) — con vista previa (`FileReader` + dataURL) y botón para quitarla. Estado en `_wiz.imagenFile` (objeto `File`) y `_wiz.imagenPreview` (dataURL).
+- **Envío:** `_wizEnviar()` agrega el archivo al `FormData` bajo el campo `imagen` solo si existe.
+- **Backend:**
+  - Ruta `POST /api/reserva/crear` ahora incluye el middleware `verificaAdjunto` (mismo usado por `clienteApi`) antes de `verificarToken`, para validar tamaño/formato y setear `req.archivo`.
+  - `reservaControllers.js → crear()`: genera un nombre de archivo seguro `RES_{sesId}_{timestamp}.{extensión ya validada}` (**no** se usa el nombre original del archivo para evitar path traversal) y hace `mv()` a `app/public/imagenes/reserva/` (carpeta nueva, mismo patrón que `imagenes/cliente/`) después de crear la reserva.
+  - `reservaModels.js → crearReserva(body, nombreImagen)`: pasa el nombre de archivo como 11º parámetro del SP.
+- **Base de datos (verificado y aplicado directamente en MariaDB, `DB_OLIMPO`):**
+  - `ALTER TABLE TRS_RESERVA ADD COLUMN IMAGEN VARCHAR(150) NULL AFTER COMENTARIO;`
+  - `USP_UPD_INS_RESERVA_CLIENTE`: nuevo parámetro `IN _IMAGEN VARCHAR(150)` (11º, al final). La rama `'crea'` lo guarda en el INSERT y lo devuelve en el SELECT junto con `@PRECIO_SERVICIO` (nuevo `SET` global, `TRS_SERVICIO_SUCURSAL.PRECIO`). Las ramas `'edita'`/`'editaDD'` aceptan el parámetro pero no lo usan (no forman parte del alcance — el cliente no puede editar reservas, ver épica más abajo). Los tres `CALL` desde `reservaModels.js` (`crearReserva`, `editarReserva`, `editarReservaDD`) se actualizaron para pasar el 11º argumento (`null` en los dos últimos), ya que MariaDB exige los 11 posicionales sin importar la rama.
+  - `USP_SEL_VERLISTA` (procedimiento compartido por 20 esquemas/tenants — **se modificó únicamente la copia de `DB_OLIMPO`**): ramas `'reserva'` y `'reserva_cliente'` ahora agregan `SS.PRECIO AS PRECIO_SERVICIO` al `SELECT`. `IMAGEN` viaja automáticamente vía `TR.*` una vez agregada la columna, sin tocar el SP en este punto.
+- **Frontend — resumen y detalle:**
+  - `_wizShowSuccess()`: fila "Precio" (desde `_wiz.servicioPrecio`, sin esperar al SP) + imagen de vista previa (`_wiz.imagenPreview`, local, sin round-trip).
+  - `verDetalleReserva()`: fila "Precio" (`evt.PRECIO_SERVICIO`) y bloque de imagen (`evt.IMAGEN` → `/imagenes/reserva/{IMAGEN}`, servida por el static route `/imagenes` ya existente).
+- **Verificado end-to-end** contra el servidor de desarrollo ya corriendo (`npm start`, nodemon recargó los cambios de backend automáticamente): `POST /api/reserva/crear` con imagen adjunta vía `multipart/form-data` → archivo guardado en disco, accesible en `/imagenes/reserva/...`, y reflejado con `IMAGEN`+`PRECIO_SERVICIO` correctos al releer con `GET /api/reserva/listar/0/:sesId`. También verificado el caso sin imagen (comportamiento sin cambios). Reservas y archivo de prueba eliminados tras la verificación.
+
+### [x] Orden descendente en "Próximas" — Mis Citas (2026-08-13)
+- `abrirMisCitas()`: la sección "Próximas" ahora ordena descendente (la fecha futura más lejana primero, bajando hasta la más próxima a hoy). La sección "Anteriores" no cambió (ya era descendente, la más reciente del pasado primero).
+
 ### [x] Corrección WhatsApp — envío de mensajes
 - Corregido header `x-api-key` faltante en los calls.
 - Corregido campo `sender` con `NRO_WHATSAPP` de la sucursal.

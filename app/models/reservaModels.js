@@ -3,8 +3,8 @@ const moment = require('moment');
 const config = require('../config/config');
 const axios = require('axios');
 
-const crearReserva = async (body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+const crearReserva = async (body, nombreImagen)=>{
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const row= await pool.query(query,
     [
         0,
@@ -16,7 +16,8 @@ const crearReserva = async (body)=>{
         body.tipoCliente,
         body.sucursal,
         'crea',
-        body.sesId
+        body.sesId,
+        nombreImagen || null
     ]);
 
     let whatsappOk = true;
@@ -77,7 +78,7 @@ Si deseas modificar o cancelar tu cita, contáctanos con anticipación. 📲
 
 const editarReserva = async (id,body)=>{
 
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,
@@ -89,7 +90,8 @@ const editarReserva = async (id,body)=>{
         body.tipoCliente || 0,
         0,
         'edita',
-        body.sesId
+        body.sesId,
+        null
     ]);
 
     moment.locale('es');
@@ -146,7 +148,7 @@ Si necesitas volver a cambiar tu cita, contáctanos con anticipación. 📲`.tri
 }
 
 const editarReservaDD = async (id,body)=>{
-    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const query = `CALL USP_UPD_INS_RESERVA_CLIENTE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const row = await pool.query(query,
     [
         id,
@@ -158,7 +160,8 @@ const editarReservaDD = async (id,body)=>{
         0,
         0,
         'editaDD',
-        body.sesId
+        body.sesId,
+        null
     ]);
 
     moment.locale('es');

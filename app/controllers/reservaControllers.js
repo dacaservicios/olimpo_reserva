@@ -63,8 +63,20 @@ const buscar=(req, res)=>{
 }
 
 const crear=(req, res)=>{
-    crearReserva(req.body)
+    let nombreImagen = null;
+    if(req.archivo==1){
+        const uploadedFile = req.files.imagen;
+        const extension = uploadedFile.name.split('.').pop().toLowerCase();
+        nombreImagen = 'RES_'+req.body.sesId+'_'+Date.now()+'.'+extension;
+    }
+    crearReserva(req.body, nombreImagen)
     .then(valor => {
+        if(nombreImagen){
+            const ruta = '../public/imagenes/reserva/'+nombreImagen;
+            req.files.imagen.mv(path.join(__dirname,ruta), (err) => {
+                if(err) console.error('Error al guardar imagen de reserva:', err);
+            });
+        }
         res.json({
             valor : valor
         });

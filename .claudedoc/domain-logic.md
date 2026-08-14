@@ -14,6 +14,7 @@
 | `ID_SERVICIO_SUCURSAL` | INT FK | `_wiz.servicioId` | Servicio de la sucursal |
 | `FECHA_RESERVA` | DATETIME | `_wiz.fecha + _wiz.hora` | Fecha y hora (guardada en UTC local) |
 | `COMENTARIO` | VARCHAR(250) | `_wiz.comentario` | Nota del cliente |
+| `IMAGEN` | VARCHAR(150) | `_wiz.imagenFile` / `evt.IMAGEN` | Nombre del archivo de foto de referencia — agregado 2026-08-13, columna nueva en `TRS_RESERVA`. Servida en `/imagenes/reserva/{IMAGEN}` |
 | `TIPO_CLIENTE` | INT FK | `_wiz.tipoClienteId` | ID_PARAMETRO_DETALLE (tipo: Adulto/Menor) |
 | `ESTADO` | INT | `evt.ESTADO` | Estado de la reserva |
 
@@ -30,6 +31,7 @@
 | `NRO_WHATSAPP` | Número de la sucursal (sender de WhatsApp, con prefijo 51) |
 | `COLOR` | Color del barbero (para borde de tarjeta) |
 | `NOMBRE_SUCURSAL` | Nombre de la sede de la reserva (`MAE_SUCURSAL.NOMB_SUCURSAL`) — agregado 2026-08-13, se muestra en el detalle de reserva |
+| `PRECIO_SERVICIO` | Precio del servicio (`TRS_SERVICIO_SUCURSAL.PRECIO`) — agregado 2026-08-13, se muestra en el detalle de reserva. En el resumen del wizard se usa `_wiz.servicioPrecio` (ya capturado en el Paso 2) en vez de esperar la respuesta del SP |
 
 > **Crítico:** El alias del JOIN de TIPO_PARAMETRO_DETALLE debe llamarse `DESC_TIPO_CLIENTE` (NO `TIPO_CLIENTE`) para evitar `DUPLICATE FIELD NAME` — la columna `TIPO_CLIENTE` ya existe en `TR.*`.
 

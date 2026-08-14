@@ -223,6 +223,8 @@ function verDetalleReserva(evt, soloLectura = false) {
 	const barbero  = evt.NOMBRE_EMPLEADO || '—';
 	const servicio = evt.NOMBRE || '—';
 	const sede     = evt.NOMBRE_SUCURSAL || '—';
+	const precio   = evt.PRECIO_SERVICIO != null ? `S/ ${Number(evt.PRECIO_SERVICIO).toFixed(2)}` : null;
+	const imagenUrl = evt.IMAGEN ? `/imagenes/reserva/${evt.IMAGEN}` : null;
 	const color    = evt.COLOR || 'var(--md-primary)';
 	const id       = evt.ID_RESERVA;
 
@@ -253,6 +255,11 @@ function verDetalleReserva(evt, soloLectura = false) {
 					<span class="res-detail-key"><i class="las la-cut"></i> Servicio</span>
 					<span class="res-detail-val">${servicio}</span>
 				</div>
+				${precio ? `
+				<div class="res-detail-row">
+					<span class="res-detail-key"><i class="las la-money-bill-wave"></i> Precio</span>
+					<span class="res-detail-val">${precio}</span>
+				</div>` : ''}
 				<div class="res-detail-row">
 					<span class="res-detail-key"><i class="las la-user-tie"></i> Barbero</span>
 					<span class="res-detail-val">${barbero}</span>
@@ -276,6 +283,11 @@ function verDetalleReserva(evt, soloLectura = false) {
 					<span class="res-detail-val">${evt.COMENTARIO}</span>
 				</div>` : ''}
 			</div>
+			${imagenUrl ? `
+			<div class="res-detail-img-wrap">
+				<div class="res-detail-key" style="margin-bottom:8px"><i class="las la-image"></i> Foto de referencia</div>
+				<img src="${imagenUrl}" alt="Foto de referencia" class="res-detail-img">
+			</div>` : ''}
 		</div>`
 	});
 }
@@ -322,7 +334,7 @@ function abrirMisCitas() {
 
 	const proximas = [..._calEvents]
 		.filter(e => moment(e.FECHA_RESERVA).format('YYYY-MM-DD') >= today)
-		.sort((a, b) => moment(a.FECHA_RESERVA).valueOf() - moment(b.FECHA_RESERVA).valueOf());
+		.sort((a, b) => moment(b.FECHA_RESERVA).valueOf() - moment(a.FECHA_RESERVA).valueOf());
 
 	const pasadas = [..._calEvents]
 		.filter(e => moment(e.FECHA_RESERVA).format('YYYY-MM-DD') < today)
@@ -569,12 +581,13 @@ function _wizReset(fecha) {
 		step: 1,
 		tipo: null, tipoClienteId: null,
 		sucursalId: null, sucursalNombre: '',
-		servicioId: null, servicioNombre: '', servicioDur: '',
+		servicioId: null, servicioNombre: '', servicioDur: '', servicioPrecio: null,
 		barberoId: null, barberoNombre: '',
 		fecha: fecha || moment().format('YYYY-MM-DD'),
 		hora: null,
 		clienteId: null, clienteNombre: '',
-		comentario: ''
+		comentario: '',
+		imagenFile: null, imagenPreview: ''
 	};
 }
 
@@ -740,12 +753,13 @@ function _wizStep1() {
 function _wizStep2() {
 	const filtrados = _wizData.servicios.filter(s => s.ID_SUCURSAL == _wiz.sucursalId);
 	const cards = filtrados.map(s => {
-		const sel  = s.ID_SERVICIO_SUCURSAL == _wiz.servicioId ? ' selected' : '';
-		const desc = s.DESCRIPCION ? `<div class="wiz-service-dur">${s.DESCRIPCION}</div>` : '';
+		const sel    = s.ID_SERVICIO_SUCURSAL == _wiz.servicioId ? ' selected' : '';
+		const desc   = s.DESCRIPCION ? `<div class="wiz-service-dur">${s.DESCRIPCION}</div>` : '';
+		const precio = s.PRECIO != null ? `<div class="wiz-service-price">S/ ${Number(s.PRECIO).toFixed(2)}</div>` : '';
 		return `<div class="wiz-service-card${sel}"
-			data-id="${s.ID_SERVICIO_SUCURSAL}" data-nombre="${s.NOMBRE}" data-dur="${s.DURACION || ''}">
+			data-id="${s.ID_SERVICIO_SUCURSAL}" data-nombre="${s.NOMBRE}" data-dur="${s.DURACION || ''}" data-precio="${s.PRECIO != null ? s.PRECIO : ''}">
 			<div class="wiz-service-icon"><i class="las la-cut"></i></div>
-			<div class="wiz-service-name">${s.NOMBRE}</div>${desc}
+			<div class="wiz-service-name">${s.NOMBRE}</div>${desc}${precio}
 		</div>`;
 	}).join('') || '<div class="wiz-empty-msg" style="grid-column:1/-1">No hay servicios disponibles para esta sede</div>';
 
@@ -757,9 +771,10 @@ function _wizStep2() {
 	$('#wizContent').off('click', '.wiz-service-card').on('click', '.wiz-service-card', function () {
 		$('.wiz-service-card').removeClass('selected');
 		$(this).addClass('selected');
-		_wiz.servicioId    = $(this).data('id');
+		_wiz.servicioId     = $(this).data('id');
 		_wiz.servicioNombre = $(this).data('nombre');
-		_wiz.servicioDur   = $(this).data('dur');
+		_wiz.servicioDur    = $(this).data('dur');
+		_wiz.servicioPrecio = $(this).data('precio') !== '' ? Number($(this).data('precio')) : null;
 	});
 }
 
@@ -969,7 +984,52 @@ function _wizStep5() {
 			<div class="wiz-field-label"><i class="las la-comment-alt"></i> Comentario</div>
 			<input type="text" id="wizComentario" class="wiz-field-input" placeholder="Opcional..." value="${_wiz.comentario || ''}">
 		</div>
+		<div class="wiz-field-group">
+			<div class="wiz-field-label"><i class="las la-image"></i> Foto de referencia (opcional)</div>
+			<div id="wizImagenBox">${_wizImagenBoxHtml()}</div>
+			<input type="file" id="wizImagenCamara" accept="image/*" capture="environment" style="display:none">
+			<input type="file" id="wizImagenGaleria" accept="image/*" style="display:none">
+		</div>
 	`);
+
+	$('#wizContent').off('click', '#wizBtnCamara').on('click', '#wizBtnCamara', () => $('#wizImagenCamara').trigger('click'));
+	$('#wizContent').off('click', '#wizBtnGaleria').on('click', '#wizBtnGaleria', () => $('#wizImagenGaleria').trigger('click'));
+	$('#wizContent').off('change', '#wizImagenCamara').on('change', '#wizImagenCamara', function () { _wizImagenSeleccionada(this.files[0]); });
+	$('#wizContent').off('change', '#wizImagenGaleria').on('change', '#wizImagenGaleria', function () { _wizImagenSeleccionada(this.files[0]); });
+	$('#wizContent').off('click', '#wizImagenQuitar').on('click', '#wizImagenQuitar', function (e) {
+		e.stopPropagation();
+		_wiz.imagenFile = null;
+		_wiz.imagenPreview = '';
+		$('#wizImagenBox').html(_wizImagenBoxHtml());
+	});
+}
+
+function _wizImagenBoxHtml() {
+	if (_wiz.imagenPreview) {
+		return `<div class="wiz-img-preview">
+			<img src="${_wiz.imagenPreview}" alt="Vista previa">
+			<button type="button" id="wizImagenQuitar" class="wiz-img-remove"><i class="las la-times-circle"></i></button>
+		</div>`;
+	}
+	return `<div class="wiz-img-picker">
+		<button type="button" id="wizBtnCamara" class="wiz-img-btn"><i class="las la-camera"></i> Tomar foto</button>
+		<button type="button" id="wizBtnGaleria" class="wiz-img-btn"><i class="las la-image"></i> Galería</button>
+	</div>`;
+}
+
+function _wizImagenSeleccionada(file) {
+	if (!file) return;
+	if (!file.type.startsWith('image/')) {
+		Swal.fire({ icon: 'warning', title: 'Selecciona un archivo de imagen', timer: 2000, showConfirmButton: false, toast: true, position: 'top' });
+		return;
+	}
+	_wiz.imagenFile = file;
+	const reader = new FileReader();
+	reader.onload = (e) => {
+		_wiz.imagenPreview = e.target.result;
+		$('#wizImagenBox').html(_wizImagenBoxHtml());
+	};
+	reader.readAsDataURL(file);
 }
 
 // ── Navegación ──
@@ -1024,6 +1084,7 @@ async function _wizEnviar() {
 		fd.append('tipoCliente',  _wiz.tipoClienteId);
 		fd.append('sucursal',     _wiz.sucursalId);
 		fd.append('sesId',        verSesion());
+		if (_wiz.imagenFile) fd.append('imagen', _wiz.imagenFile);
 
 		const r = await axios.post('/api/reserva/crear', fd, {
 			headers: { authorization: `Bearer ${verToken()}` }
@@ -1064,6 +1125,11 @@ function _wizShowSuccess(mensaje) {
 					<span class="wiz-sum-key">Servicio</span>
 					<span class="wiz-sum-val">${_wiz.servicioNombre}</span>
 				</div>
+				${_wiz.servicioPrecio != null ? `
+				<div class="wiz-sum-row">
+					<span class="wiz-sum-key">Precio</span>
+					<span class="wiz-sum-val">S/ ${Number(_wiz.servicioPrecio).toFixed(2)}</span>
+				</div>` : ''}
 				<div class="wiz-sum-row">
 					<span class="wiz-sum-key">Barbero</span>
 					<span class="wiz-sum-val">${_wiz.barberoNombre}</span>
@@ -1094,6 +1160,7 @@ function _wizShowSuccess(mensaje) {
 					<span class="wiz-sum-val">${_wiz.comentario}</span>
 				</div>` : ''}
 			</div>
+			${_wiz.imagenPreview ? `<img src="${_wiz.imagenPreview}" alt="Foto de referencia" class="wiz-success-img">` : ''}
 			<button class="wiz-btn-primary" onclick="cerrar_general1()">
 				<i class="las la-calendar-check"></i> Volver al calendario
 			</button>
