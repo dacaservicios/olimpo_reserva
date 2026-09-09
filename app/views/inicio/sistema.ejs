@@ -371,7 +371,9 @@ async function _passGuardar() {
     </div>
     <div class="offcanvas-body">
         <p class="text-muted" style="font-size:13px;">
-            Mantén tus datos al día para recibir tus notificaciones y acceder a beneficios, ofertas y regalos.
+            Mantén tus datos al día para acceder a beneficios, ofertas y regalos.
+            El <b>celular</b> y el <b>correo electrónico</b> son necesarios para poder notificarte
+            (confirmación de reservas, recordatorios y avisos).
         </p>
         <form id="formPerfil" novalidate autocomplete="off">
             <div class="mb-2">
@@ -587,6 +589,8 @@ function promptCompletaPerfil(faltan) {
         html: '<div style="text-align:left;font-size:14px;">' +
               'Tener tus datos actualizados nos permite enviarte tus notificaciones y ' +
               'que accedas a <b>beneficios, ofertas y regalos</b>.' +
+              '<br><br>El <b>número de celular</b> y el <b>correo electrónico</b> son ' +
+              'necesarios para poder notificarte (confirmación de reservas, recordatorios y avisos).' +
               (lista ? '<br><br>Falta o está incompleto:<ul id="perfilFaltantes">' + lista + '</ul>' : '') +
               '</div>',
         icon: 'info',
