@@ -68,6 +68,11 @@
             </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;">
+            <a id="editaPerfil" href="#" class="md-list-item" data-bs-dismiss="offcanvas"
+               onclick="setTimeout(abrirFormPerfil,350)">
+                <i class="bx bx-user"></i>
+                <span>Actualizar mis datos</span>
+            </a>
             <a id="cambiaPassword" href="#" class="md-list-item" data-bs-dismiss="offcanvas"
                onclick="setTimeout(abrirCambiaPasswordPanel,350)">
                 <i class="bx bx-lock-alt"></i>
@@ -300,6 +305,394 @@ async function _passGuardar() {
         var msg = (err.response && err.response.data && err.response.data.error)
                   ? err.response.data.error.message : 'Error de conexión';
         _passShowMsg('msgPassActual', msg);
+    }
+}
+</script>
+
+<!-- ═══════════════════════════════
+     ESTILOS — Puertas post-login
+════════════════════════════════ -->
+<style>
+    body.gate-lock .android-bottom-nav { display: none !important; }
+    body.gate-lock .android-top-bar .brand { pointer-events: none; }
+    .gate-card { max-width: 460px; margin: 24px auto; animation: gateIn .35s ease both; }
+    .gate-card .gate-icon { font-size: 42px; color: #c9a227; }
+    .gate-msg { color:#dc3545; font-size:12px; margin-top:4px; min-height:14px; }
+    #perfilFaltantes { font-size:13px; }
+
+    @keyframes gateIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+    @keyframes reqPop { 0%{ transform:scale(1);} 40%{ transform:scale(1.18);} 100%{ transform:scale(1);} }
+
+    /* Campo contraseña con ojo */
+    .gate-pass-wrap { position: relative; }
+    .gate-pass-wrap .gate-eye {
+        position:absolute; right:10px; top:50%; transform:translateY(-50%);
+        cursor:pointer; color:#999; font-size:18px;
+    }
+    .gate-pass-wrap input { padding-right: 38px; }
+
+    /* Barra de fuerza */
+    .gate-strength { height:6px; border-radius:4px; background:#eceff1; overflow:hidden; margin:8px 0 4px; }
+    .gate-strength > i {
+        display:block; height:100%; width:0;
+        border-radius:4px; background:#dc3545;
+        transition: width .35s ease, background-color .35s ease;
+    }
+    .gate-strength-label { font-size:11px; color:#90a4ae; transition:color .3s ease; }
+
+    /* Checklist de requisitos */
+    .gate-reqs { list-style:none; padding:0; margin:6px 0 2px; }
+    .gate-reqs li {
+        display:flex; align-items:center; gap:8px;
+        font-size:12.5px; color:#8a959e; padding:3px 0;
+        transition: color .3s ease;
+    }
+    .gate-reqs li i { font-size:16px; transition: color .3s ease, transform .3s ease; }
+    .gate-reqs li.met { color:#1e7e34; }
+    .gate-reqs li.met i { color:#28a745; animation: reqPop .35s ease; }
+
+    /* Indicador de coincidencia */
+    .gate-match { font-size:12px; margin-top:4px; min-height:16px; transition:color .3s ease; }
+    .gate-match.ok  { color:#1e7e34; }
+    .gate-match.bad { color:#dc3545; }
+
+    /* Botón: se habilita al cumplir todo */
+    #gpGuardar { transition: opacity .25s ease, filter .25s ease; }
+    #gpGuardar:disabled { opacity:.55; filter:grayscale(.4); cursor:not-allowed; }
+</style>
+
+<!-- ═══════════════════════════════
+     OFFCANVAS — COMPLETAR PERFIL
+════════════════════════════════ -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasPerfil">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="las la-user-edit me-2"></i>Mi información</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p class="text-muted" style="font-size:13px;">
+            Mantén tus datos al día para recibir tus notificaciones y acceder a beneficios, ofertas y regalos.
+        </p>
+        <form id="formPerfil" novalidate autocomplete="off">
+            <div class="mb-2">
+                <label>Nombres</label>
+                <input id="pfNombre" class="form-control" maxlength="100">
+                <div class="gate-msg" id="msgPfNombre"></div>
+            </div>
+            <div class="mb-2">
+                <label>Apellido paterno</label>
+                <input id="pfPaterno" class="form-control" maxlength="50">
+                <div class="gate-msg" id="msgPfPaterno"></div>
+            </div>
+            <div class="mb-2">
+                <label>Apellido materno</label>
+                <input id="pfMaterno" class="form-control" maxlength="50">
+                <div class="gate-msg" id="msgPfMaterno"></div>
+            </div>
+            <div class="mb-2">
+                <label>Tipo de documento</label>
+                <select id="pfTipoDoc" class="form-control"></select>
+                <div class="gate-msg" id="msgPfTipoDoc"></div>
+            </div>
+            <div class="mb-2">
+                <label>Número de documento</label>
+                <input id="pfDocumento" class="form-control" inputmode="numeric" maxlength="15">
+                <div class="gate-msg" id="msgPfDocumento"></div>
+            </div>
+            <div class="mb-2">
+                <label>Celular</label>
+                <input id="pfCelular" class="form-control" inputmode="numeric" maxlength="9" placeholder="9XXXXXXXX">
+                <div class="gate-msg" id="msgPfCelular"></div>
+            </div>
+            <div class="mb-2">
+                <label>Correo electrónico</label>
+                <input id="pfEmail" class="form-control" maxlength="100" placeholder="correo@ejemplo.com">
+                <div class="gate-msg" id="msgPfEmail"></div>
+            </div>
+            <div class="mb-2">
+                <label>Dirección <span class="text-muted">(opcional)</span></label>
+                <input id="pfDireccion" class="form-control" maxlength="200">
+            </div>
+            <div class="mb-3">
+                <label>Fecha de nacimiento <span class="text-muted">(opcional)</span></label>
+                <input id="pfFechaNac" class="form-control" placeholder="DD-MM-AAAA" maxlength="10">
+                <div class="gate-msg" id="msgPfFechaNac"></div>
+            </div>
+            <button type="button" id="btnGuardaPerfil" class="btn btn-primary w-100">
+                <i class="bx bx-save me-1"></i> Guardar información
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  PUERTA 1 — Cambio de contraseña obligatorio (primer ingreso)
+// ═══════════════════════════════════════════════════════════════════════
+function mostrarGateCambiaPass() {
+    document.body.classList.add('gate-lock');
+    var doc = (window._clienteInfo && window._clienteInfo.NUMERO_DOCUMENTO) || '';
+
+    document.getElementById('cuerpoPrincipal').innerHTML = `
+      <div class="card gate-card">
+        <div class="card-body text-center">
+          <i class="las la-shield-alt gate-icon"></i>
+          <h5 class="mt-2">Crea tu contraseña</h5>
+          <p class="text-muted" style="font-size:13px;">
+            Por seguridad, antes de continuar debes reemplazar la contraseña
+            inicial (tu número de documento) por una nueva.
+          </p>
+          <div class="text-start">
+            <div class="mb-2">
+              <label>Contraseña nueva</label>
+              <div class="gate-pass-wrap">
+                <input id="gpNueva" type="password" class="form-control" maxlength="16" autocomplete="new-password">
+                <i class="las la-low-vision gate-eye" data-target="gpNueva"></i>
+              </div>
+
+              <div class="gate-strength"><i id="gpBar"></i></div>
+              <div class="gate-strength-label" id="gpBarLabel">Escribe tu contraseña</div>
+
+              <ul class="gate-reqs">
+                <li id="greqLen"><i class="las la-circle"></i> Entre 6 y 16 caracteres</li>
+                <li id="greqMin"><i class="las la-circle"></i> Al menos una minúscula</li>
+                <li id="greqMay"><i class="las la-circle"></i> Al menos una mayúscula</li>
+                <li id="greqNum"><i class="las la-circle"></i> Al menos un número</li>
+                <li id="greqEsp"><i class="las la-circle"></i> Al menos un carácter especial</li>
+                <li id="greqDoc"><i class="las la-circle"></i> Distinta a tu número de documento</li>
+              </ul>
+              <div class="gate-msg" id="gpMsgNueva"></div>
+            </div>
+            <div class="mb-2">
+              <label>Repite la contraseña nueva</label>
+              <div class="gate-pass-wrap">
+                <input id="gpRepite" type="password" class="form-control" maxlength="16" autocomplete="new-password">
+                <i class="las la-low-vision gate-eye" data-target="gpRepite"></i>
+              </div>
+              <div class="gate-match" id="gpMatch"></div>
+            </div>
+            <button type="button" id="gpGuardar" class="btn btn-primary w-100" disabled>
+              Guardar y continuar
+            </button>
+          </div>
+        </div>
+      </div>`;
+
+    document.getElementById('gpNueva').oninput  = _gpSync;
+    document.getElementById('gpRepite').oninput = _gpSync;
+    document.getElementById('gpGuardar').onclick = function(){ _gpGuardar(doc); };
+
+    // Mostrar / ocultar contraseña
+    Array.prototype.forEach.call(document.querySelectorAll('.gate-eye'), function(eye){
+        eye.onclick = function(){
+            var inp = document.getElementById(eye.dataset.target);
+            var show = inp.type === 'password';
+            inp.type = show ? 'text' : 'password';
+            eye.className = 'las gate-eye ' + (show ? 'la-eye' : 'la-low-vision');
+            eye.dataset.target = inp.id;
+        };
+    });
+
+    window._gpDoc = String(doc || '');
+    _gpSync();
+}
+
+// Evalúa cada regla y devuelve el mapa de cumplimiento.
+function _gpRules(val) {
+    var especiales = '!¡#$%&()*+-./:;=¿?@[]{|}';
+    return {
+        len: val.length >= 6 && val.length <= 16,
+        min: /[a-záéíóúñ]/.test(val),
+        may: /[A-ZÁÉÍÓÚÑ]/.test(val),
+        num: /[0-9]/.test(val),
+        esp: val.split('').some(function(c){ return especiales.indexOf(c) !== -1; }),
+        doc: val.length > 0 && val !== (window._gpDoc || '')
+    };
+}
+
+// Refresca checklist, barra de fuerza, coincidencia y estado del botón.
+function _gpSync() {
+    var nueva  = document.getElementById('gpNueva').value;
+    var repite = document.getElementById('gpRepite').value;
+    var r = _gpRules(nueva);
+
+    var map = { greqLen:r.len, greqMin:r.min, greqMay:r.may, greqNum:r.num, greqEsp:r.esp, greqDoc:r.doc };
+    Object.keys(map).forEach(function(id){
+        var li = document.getElementById(id);
+        if (!li) return;
+        var was = li.classList.contains('met');
+        li.classList.toggle('met', map[id]);
+        var ic = li.querySelector('i');
+        ic.className = 'las ' + (map[id] ? 'la-check-circle' : 'la-circle');
+        if (map[id] && !was) { ic.style.animation = 'none'; void ic.offsetWidth; ic.style.animation = ''; }
+    });
+
+    var pasos = ['len','min','may','num','esp'].filter(function(k){ return r[k]; }).length;
+    var pct = pasos * 20;
+    var colores = ['#dc3545','#dc3545','#fd7e14','#ffc107','#28a745','#1e7e34'];
+    var textos  = ['Muy débil','Muy débil','Débil','Aceptable','Buena','Fuerte'];
+    var bar = document.getElementById('gpBar');
+    var lbl = document.getElementById('gpBarLabel');
+    bar.style.width = pct + '%';
+    bar.style.backgroundColor = colores[pasos];
+    lbl.textContent = nueva.length ? textos[pasos] : 'Escribe tu contraseña';
+    lbl.style.color = nueva.length ? colores[pasos] : '#90a4ae';
+
+    var m = document.getElementById('gpMatch');
+    if (!repite.length) { m.textContent = ''; m.className = 'gate-match'; }
+    else if (repite === nueva) { m.textContent = '✓ Las contraseñas coinciden'; m.className = 'gate-match ok'; }
+    else { m.textContent = '✗ Las contraseñas no coinciden'; m.className = 'gate-match bad'; }
+
+    var todo = r.len && r.min && r.may && r.num && r.esp && r.doc && repite === nueva && repite.length > 0;
+    document.getElementById('gpGuardar').disabled = !todo;
+    return todo;
+}
+
+async function _gpGuardar(doc) {
+    var nueva  = document.getElementById('gpNueva').value.trim();
+    var repite = document.getElementById('gpRepite').value.trim();
+    document.getElementById('gpMsgNueva').textContent = '';
+
+    if (!_gpSync()) { document.getElementById('gpMsgNueva').textContent = 'Revisa que se cumplan todas las condiciones.'; return; }
+
+    bloquea();
+    try {
+        const r = await axios.put('/api/acceso/password/' + verSesion(),
+            { contrasenaNueva: nueva, inicial: true },
+            { headers: { authorization: 'Bearer ' + verToken() } }
+        );
+        desbloquea();
+        if (r.data.valor.resultado) {
+            await Swal.fire({ icon:'success', title:'¡Contraseña creada!', text:'Ya puedes usar la aplicación.', confirmButtonText:'Continuar', allowOutsideClick:false });
+            window.location.reload();
+        } else {
+            document.getElementById('gpMsgNueva').textContent = r.data.valor.mensaje || 'No se pudo guardar.';
+        }
+    } catch (err) {
+        desbloquea();
+        var msg = (err.response && err.response.data && err.response.data.error)
+                  ? err.response.data.error.message : 'Error de conexión';
+        document.getElementById('gpMsgNueva').textContent = msg;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PUERTA 2 — Completar información (posponible, reaparece cada login)
+// ═══════════════════════════════════════════════════════════════════════
+function promptCompletaPerfil(faltan) {
+    var etiquetas = { documento:'número de documento', celular:'celular', correo:'correo electrónico' };
+    var lista = (faltan || []).map(function(f){ return '<li>' + (etiquetas[f] || f) + '</li>'; }).join('');
+    Swal.fire({
+        title: 'Completa tu información',
+        html: '<div style="text-align:left;font-size:14px;">' +
+              'Tener tus datos actualizados nos permite enviarte tus notificaciones y ' +
+              'que accedas a <b>beneficios, ofertas y regalos</b>.' +
+              (lista ? '<br><br>Falta o está incompleto:<ul id="perfilFaltantes">' + lista + '</ul>' : '') +
+              '</div>',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Completar ahora',
+        cancelButtonText: 'Ahora no',
+        customClass: { confirmButton: 'btn btn-primary', cancelButton: 'btn btn-secondary ms-1' },
+        buttonsStyling: false,
+        allowOutsideClick: false
+    }).then(function(res){
+        if (res.isConfirmed) abrirFormPerfil();
+    });
+}
+
+async function abrirFormPerfil() {
+    bloquea();
+
+    // Si aún no tenemos los datos del cliente en memoria, los pedimos.
+    if (!window._clienteInfo) {
+        try {
+            const rCli = await axios.get('/api/inicio/datos/' + verSesion(),
+                { headers: { authorization: 'Bearer ' + verToken() } });
+            window._clienteInfo = rCli.data.valor.info || {};
+        } catch (e) { window._clienteInfo = {}; }
+    }
+
+    var c = window._clienteInfo || {};
+    try {
+        const rTipos = await axios.get('/api/parametro/detalle/listar/2/' + verSesion(),
+            { headers: { authorization: 'Bearer ' + verToken() } });
+        var tipos = (rTipos.data.valor.info || []).filter(function(t){ return t.ES_VIGENTE == 1; });
+        var opts = tipos.map(function(t){
+            var sel = (t.ID_PARAMETRO_DETALLE == c.ID_TIPO_DOCUMENTO) ? ' selected' : '';
+            return '<option value="' + t.ID_PARAMETRO_DETALLE + '"' + sel + '>' + t.DESCRIPCIONDETALLE + '</option>';
+        }).join('');
+        document.getElementById('pfTipoDoc').innerHTML = '<option value="">Seleccione...</option>' + opts;
+    } catch (e) {
+        document.getElementById('pfTipoDoc').innerHTML = '<option value="35">Documento de identidad</option>';
+    }
+    desbloquea();
+
+    document.getElementById('pfNombre').value    = c.NOMBRE || '';
+    document.getElementById('pfPaterno').value   = c.APELLIDO_PATERNO || '';
+    document.getElementById('pfMaterno').value   = c.APELLIDO_MATERNO || '';
+    document.getElementById('pfDocumento').value = c.NUMERO_DOCUMENTO || '';
+    document.getElementById('pfCelular').value   = c.NRO_CELULAR || '';
+    document.getElementById('pfEmail').value     = c.EMAIL || '';
+    document.getElementById('pfDireccion').value = c.DIRECCION || '';
+    document.getElementById('pfFechaNac').value  = c.FECHA_NACIMIENTO ? moment(c.FECHA_NACIMIENTO).format('DD-MM-YYYY') : '';
+
+    ['msgPfNombre','msgPfPaterno','msgPfMaterno','msgPfTipoDoc','msgPfDocumento','msgPfCelular','msgPfEmail','msgPfFechaNac']
+        .forEach(function(id){ document.getElementById(id).textContent = ''; });
+
+    document.getElementById('btnGuardaPerfil').onclick = _guardaPerfil;
+    bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('offcanvasPerfil')).show();
+}
+
+async function _guardaPerfil() {
+    var v = function(id){ return document.getElementById(id).value.trim(); };
+    var m = function(id,msg){ document.getElementById(id).textContent = msg || ''; };
+    var body = {
+        nombre: v('pfNombre'),
+        apellidoPaterno: v('pfPaterno'),
+        apellidoMaterno: v('pfMaterno'),
+        tipoDocumento: v('pfTipoDoc'),
+        documento: v('pfDocumento'),
+        celular: v('pfCelular'),
+        email: v('pfEmail'),
+        direccion: v('pfDireccion'),
+        fechaNacimiento: v('pfFechaNac'),
+        sesId: verSesion()
+    };
+
+    ['msgPfNombre','msgPfPaterno','msgPfMaterno','msgPfTipoDoc','msgPfDocumento','msgPfCelular','msgPfEmail','msgPfFechaNac']
+        .forEach(function(id){ m(id,''); });
+
+    var ok = true;
+    if (!body.nombre)          { m('msgPfNombre','Campo obligatorio'); ok = false; }
+    if (!body.apellidoPaterno) { m('msgPfPaterno','Campo obligatorio'); ok = false; }
+    if (!body.apellidoMaterno) { m('msgPfMaterno','Campo obligatorio'); ok = false; }
+    if (!body.tipoDocumento)   { m('msgPfTipoDoc','Selecciona un tipo'); ok = false; }
+    if (!/^[0-9]{6,15}$/.test(body.documento)) { m('msgPfDocumento','Entre 6 y 15 dígitos'); ok = false; }
+    if (!/^9[0-9]{8}$/.test(body.celular))     { m('msgPfCelular','Celular de 9 dígitos que empieza en 9'); ok = false; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)) { m('msgPfEmail','Correo no válido'); ok = false; }
+    if (body.fechaNacimiento && !/^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-(19|20)[0-9]{2}$/.test(body.fechaNacimiento)) {
+        m('msgPfFechaNac','Formato DD-MM-AAAA'); ok = false;
+    }
+    if (!ok) return;
+
+    bloquea();
+    try {
+        const r = await axios.put('/api/acceso/datos/' + verSesion(), body,
+            { headers: { authorization: 'Bearer ' + verToken() } });
+        desbloquea();
+        if (r.data.valor.resultado) {
+            bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasPerfil')).hide();
+            await Swal.fire({ icon:'success', title:'¡Datos actualizados!', timer:1800, showConfirmButton:false });
+            window.location.reload();
+        } else {
+            m('msgPfDocumento', r.data.valor.mensaje || 'No se pudo guardar.');
+        }
+    } catch (err) {
+        desbloquea();
+        var msg = (err.response && err.response.data && err.response.data.error)
+                  ? err.response.data.error.message : 'Error de conexión';
+        m('msgPfDocumento', msg);
     }
 }
 </script>

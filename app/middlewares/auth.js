@@ -43,17 +43,19 @@ const verificarLogin = async (req, res, next)=>{
             }
         });
     }else{
-        const validaPassword = matchPassword(body.txtContrasena,row[0][0].CONTRASENA);
+        // Primer ingreso: el cliente aún no tiene contraseña -> la credencial válida
+        // es su propio número de documento (que también es el usuario).
+        const hashGuardado = row[0][0].CONTRASENA;
+        const validaPassword = (hashGuardado === null || hashGuardado === undefined || hashGuardado === '')
+            ? (body.txtContrasena === (row[0][0].NUMERO_DOCUMENTO || body.txtCorreo))
+            : matchPassword(body.txtContrasena, hashGuardado);
         if(validaPassword){
-            const row1 = await pool.query(query,
-                [
-                    0,
-                    body.txtCorreo,
-                    0,  
-                    1,
-                    ip,
-                    server
-                ]);
+            let row1;
+            try {
+                row1 = await pool.query(query, [0, body.txtCorreo, 0, 1, ip, server]);
+            } catch(err) {
+                return res.status(500).json({ error: { message: err.message, errno: err.errno, code: err.code } });
+            }
 
                 if(row1[0][0].MENSAJE=='0'){
                     res.json({
@@ -71,15 +73,12 @@ const verificarLogin = async (req, res, next)=>{
                     }); 
                 } 
         }else{
-            const row2 = await pool.query(query,
-            [
-                0,
-                body.txtCorreo,
-                0,   
-                4,
-                ip,
-                server
-            ]);
+            let row2;
+            try {
+                row2 = await pool.query(query, [0, body.txtCorreo, 0, 4, ip, server]);
+            } catch(err) {
+                return res.status(500).json({ error: { message: err.message, errno: err.errno, code: err.code } });
+            }
 
             if(row2[0][0].INTENTO>=3){
                 res.json({
@@ -161,9 +160,12 @@ const verificaLogeo = async (req, res, next)=>{
                 resultado : false,
                 mensaje : '¡El usuario o la contraseña es incorrecto!'
             }
-        }); 
+        });
     }else{
-        const validaPassword = matchPassword(body.txtContrasena,row[0][0].CONTRASENA);
+        const hashGuardado = row[0][0].CONTRASENA;
+        const validaPassword = (hashGuardado === null || hashGuardado === undefined || hashGuardado === '')
+            ? (body.txtContrasena === (row[0][0].NUMERO_DOCUMENTO || body.txtCorreo))
+            : matchPassword(body.txtContrasena, hashGuardado);
         if(validaPassword){
             return next();
         }else{
@@ -187,37 +189,44 @@ const verificaLogeo = async (req, res, next)=>{
 
 }
 
-const verificarCorreo = async (req, res, next)=>{
-    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
-    const row = await pool.query(query,
-    [
-        0,
-        req.body.correo,
-        0,
-        9,
-        0,
-        0
-    ]);
-    
-    if(row[0].length>0){ 
-        /*res.json({
-            valor:{
-                resultado : true,
-                mensaje : '¡Su correo es correcto!'
-            }
-        }); */
- 
-        return next();
-    }else{
-        res.json({
+// Restablecer contraseña: "cuenta" puede ser el correo o el celular (9 dígitos).
+// Verifica que exista un cliente con ese dato antes de generar la nueva contraseña.
+//   correo  -> opción 9  (verifica correo)
+//   celular -> opción 13 (verifica celular)
+const verificarCuenta = async (req, res, next)=>{
+    const cuenta = (req.body.cuenta || '').toString().trim();
+    const esCorreo  = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cuenta);
+    const esCelular = /^9[0-9]{8}$/.test(cuenta);
+
+    if(!esCorreo && !esCelular){
+        return res.json({
             valor:{
                 resultado : false,
-                mensaje : '¡Su correo no esta registrado en el sistema!'
+                mensaje : '¡Ingresa un correo electrónico válido o un número de celular de 9 dígitos!'
             }
-        }); 
-    }  
+        });
+    }
 
+    const query = `CALL USP_UPD_INS_REGISTRO_CLIENTE(?, ?, ?, ?, ?, ?)`;
+    const row = await pool.query(query, [0, cuenta, 0, (esCorreo ? 9 : 13), 0, 0]);
+
+    if(row[0].length>0){
+        req.recuperaTipo = esCorreo ? 'correo' : 'whatsapp';
+        return next();
+    }else{
+        return res.json({
+            valor:{
+                resultado : false,
+                mensaje : esCorreo
+                    ? '¡Ese correo no está registrado en el sistema!'
+                    : '¡Ese número de celular no está registrado en el sistema!'
+            }
+        });
+    }
 }
+
+// Alias retro-compatible.
+const verificarCorreo = verificarCuenta;
 
 const caracter = (req, res, next)=>{
     //next();
@@ -337,6 +346,7 @@ module.exports = {
     verificarLogin,
     verificaLogeo,
     verificarCorreo,
+    verificarCuenta,
     caracter,
     validaSchema,
     verificarDocumento,

@@ -31,27 +31,33 @@ ACCION:
 | SP | Módulo | Parámetros clave |
 |---|---|---|
 | `USP_UPD_INS_RESERVA_CLIENTE` | Reservas | `(id, cliente, empleado, servicio, fechaHora, comentario, tipoCliente, sucursal, accion, sesId)` |
-| `USP_UPD_INS_REGISTRO_CLIENTE` | Auth/Acceso | `(id, email, contrasena, accion, ip, server)` |
-| `USP_UPD_INS_CLIENTE` | Clientes | `(id, nombre, apPaterno, apMaterno, tipoDoc, ..., accion, sesId)` |
+| `USP_UPD_INS_REGISTRO_CLIENTE` | Auth/Acceso | `(_ID, _CLIENTE, _CONTRASENA, _OPCION, _IP, _SERVER)` — `_CLIENTE` = nº documento / correo / celular según la opción |
+| `USP_UPD_INS_CLIENTE` | Clientes | **16 params**: `(_ID, _NOMBRES, _APELLIDO_PATERNO, _APELLIDO_MATERNO, _ID_TIPO_DOCUMENTO, _VIP, _NUMERO_DOCUMENTO, _DIRECCION, _FECHA_NACIMIENTO, _NRO_CELULAR, _EMAIL, _CONTRASENA, _COMENTARIO, _IMAGEN, _TIPO, _USUACREAMODI)` · `_TIPO` ∈ `'crea'|'edita'` (no existe `'cambia'`) · sucursal/empresa se derivan de `_USUACREAMODI` vía `SEG_USUARIO` · en `'edita'` no se tocan `CONTRASENA` ni `IMAGEN` (si es NULL) |
 
 **Acciones del SP `USP_UPD_INS_RESERVA_CLIENTE`:**
 - `'crea'` → inserción nueva reserva
 - `'edita'` → actualización completa (fecha/hora/comentario + datos del cliente)
 - `'editaDD'` → actualización solo de fecha/hora (drag & drop)
 
-**Acciones del SP `USP_UPD_INS_REGISTRO_CLIENTE`:**
-| Acción (int) | Descripción |
-|---|---|
-| 1 | Login: obtiene datos del usuario, genera sesión |
-| 2 | Verifica credenciales (pre-login) |
-| 3 | Registra log de acceso exitoso |
-| 4 | Registra intento fallido |
-| 6 | Logout: cierra sesión |
-| 7 | Obtiene hash de contraseña para verificación |
-| 8 | Cambia contraseña |
-| 9 | Verifica si correo existe |
-| 10 | Recupera contraseña (genera nueva aleatoria) |
-| 11 | Verifica duplicado de documento |
+**Acciones del SP `USP_UPD_INS_REGISTRO_CLIENTE`:** (firma `(_ID, _CLIENTE, _CONTRASENA, _OPCION, _IP, _SERVER)`)
+
+> El **login es por `NUMERO_DOCUMENTO`** (no por correo). Las opciones 1, 2 y 4 ubican
+> al cliente con `WHERE NUMERO_DOCUMENTO = _CLIENTE`. Las opciones 9/10/11 siguen por correo.
+
+| Acción (int) | `_CLIENTE` recibe | Descripción |
+|---|---|---|
+| 1 | nº documento | Login: valida estado y devuelve `ID_CLIENTE, ID_SUCURSAL, ID_EMPRESA, MENSAJE('0'=ok), TIPO, CORREO` |
+| 2 | nº documento | Pre-login: devuelve `ID_CLIENTE, CONTRASENA, SESION, NUMERO_DOCUMENTO, EMAIL, NRO_CELULAR` (si `CONTRASENA` es NULL → primer ingreso: la clave válida es el propio documento) |
+| 3 | — | Registra acceso exitoso (`SESION='A'`, `INTENTO=0`) |
+| 4 | nº documento | Registra intento fallido (`INTENTO++`) |
+| 6 | — | Logout (`SESION='I'`) |
+| 7 | — | Obtiene hash de contraseña (`_ID`) |
+| 8 | — | Cambia contraseña (`_ID`, hash en `_CONTRASENA`); deja `SESION='I'` |
+| 9 | correo | Verifica si el correo existe |
+| 10 | correo | Recupera contraseña por correo (hash en `_CONTRASENA`); devuelve `NUMERO_DOCUMENTO, EMAIL` |
+| 11 | correo | Verifica duplicado (por correo) |
+| 12 | nº celular | Recupera contraseña por celular; devuelve `NUMERO_DOCUMENTO, NRO_CELULAR, EMAIL, NRO_WHATSAPP` (para envío por WhatsApp) |
+| 13 | nº celular | Verifica si el celular existe (pre-recuperación) |
 
 ---
 

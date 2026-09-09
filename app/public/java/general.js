@@ -5,10 +5,11 @@ let ancho;
 $(document).ready(function() {
     atrazNO();
     init();
-    vistaMenuSubMenu({ruta:'reserva'.toLowerCase(),idSubMenu:88});
+    // datosUsuario() decide qué se carga: si el cliente debe cambiar su
+    // contraseña se muestra esa pantalla (bloqueante) y NO se carga Reservas.
     datosUsuario();
     //popup();
-        
+
     $('#salir').off( 'click');
     $('#salir').on( 'click',function () {
         salir();
@@ -104,7 +105,24 @@ async function datosUsuario(){
             $("#userSucursal").val(resp.info.ID_SUCURSAL);
             //$("span#nivelMenu, span#nivelMenu2").text(resp.info.NOMB_NIVEL);
             $("h4#usuarioMenu,h6#usuarioMenu2").html(resp.info.NOMBRE+" "+resp.info.APELLIDO_PATERNO);
-            
+
+            // ── Puertas de acceso post-login ──────────────────────────────
+            window._clienteInfo = resp.info;
+
+            if (resp.debeCambiarPass) {
+                // Bloqueante: obliga a crear una contraseña nueva antes de usar la app.
+                mostrarGateCambiaPass();
+                return;
+            }
+
+            // Acceso normal: carga Reservas.
+            vistaMenuSubMenu({ ruta: 'reserva', idSubMenu: 88 });
+
+            if (resp.perfilIncompleto) {
+                // Posponible: recordatorio para completar sus datos.
+                promptCompletaPerfil(resp.faltan || []);
+            }
+
             /*if(resp.info.IMAGEN=='null' || resp.info.IMAGEN===null){
                 $("img.imagenUsuarioInicio").attr('src','/imagenes/vacio.jpg');
             }else{
@@ -126,11 +144,14 @@ async function datosUsuario(){
             });*/
         }else{
             mensajeSistema(resp.info.mensaje);
+            vistaMenuSubMenu({ ruta: 'reserva', idSubMenu: 88 });
         }
     }catch (err) {
-        message=err.response.data.error.message;
-        errno=err.response.data.error.errno;
-        mensajeError(err.response.data.error);
+        // Ante un fallo transitorio de /api/inicio/datos, no dejar la app en blanco.
+        vistaMenuSubMenu({ ruta: 'reserva', idSubMenu: 88 });
+        if (err.response && err.response.data && err.response.data.error) {
+            mensajeError(err.response.data.error);
+        }
     }
 }
 

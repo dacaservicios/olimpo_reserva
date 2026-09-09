@@ -12,23 +12,26 @@
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `ID_CLIENTE` | INT PK AUTO | Identificador del cliente / usuario |
-| `NOMBRE` | VARCHAR(100) | Nombre(s) |
-| `APELLIDO_PATERNO` | VARCHAR(50) | |
-| `APELLIDO_MATERNO` | VARCHAR(50) | |
-| `NUM_DOCUMENTO` | VARCHAR(15) | DNI u otro |
-| `ID_TIPO_DOCUMENTO` | INT FK | FK a tabla de tipos de documento |
-| `CELULAR` | VARCHAR(9) | Celular (9 dígitos, sin prefijo) |
-| `EMAIL` | VARCHAR(100) | Correo electrónico (login) |
-| `CONTRASENA` | VARCHAR(255) | Hash bcrypt |
-| `DIRECCION` | VARCHAR(200) | Dirección opcional |
-| `FECHA_NACIMIENTO` | DATE | Fecha de nacimiento |
+| `CODIGO` | VARCHAR(20) | Código opcional |
 | `ID_SUCURSAL` | INT FK | Sucursal asignada |
 | `ID_EMPRESA` | INT FK | Empresa |
+| `NOMBRE` | VARCHAR(100) | Nombre(s) — NOT NULL |
+| `APELLIDO_PATERNO` | VARCHAR(50) | |
+| `APELLIDO_MATERNO` | VARCHAR(50) | |
+| `FECHA_NACIMIENTO` | DATE | Fecha de nacimiento |
+| `ID_TIPO_DOCUMENTO` | INT FK | FK a `TIPO_PARAMETRO_DETALLE` (parámetro **2**: 35=DNI, 2490=CE, 2491=Otro, 2492=PTP, 2516=RUC) |
+| `NUMERO_DOCUMENTO` | VARCHAR(15) | Documento. **Es el "usuario" del login.** UNIQUE `(ID_EMPRESA, NUMERO_DOCUMENTO)` |
+| `VIP` | INT | 1=VIP, 0=Normal (default 0) |
+| `DIRECCION` | VARCHAR(200) | Dirección opcional |
+| `NRO_CELULAR` | VARCHAR(9) | Celular (9 dígitos, sin prefijo). Usado para login-recovery y notificaciones |
+| `EMAIL` | VARCHAR(100) | Correo (puede ser NULL / ''); usado para recuperación de contraseña |
+| `CONTRASENA` | VARCHAR(255) | Hash bcrypt. **NULL = primer ingreso** (la clave válida es el `NUMERO_DOCUMENTO`) |
 | `IMAGEN` | VARCHAR(100) | Nombre del archivo de imagen |
-| `ESTADO` | INT | 1=Activo, 0=Inactivo |
-| `VIP` | INT | 1=VIP, 0=Normal |
 | `COMENTARIO` | VARCHAR(255) | Notas internas |
-| `FECHA_REGISTRO` | DATETIME | Fecha de creación |
+| `ES_VISIBLE` / `ES_VIGENTE` / `ES_ELIMINADO` | INT | Flags (1/0). `ES_VIGENTE=0` → cuenta inactiva; `ES_ELIMINADO=1` → eliminada |
+| `INTENTO` | INT | Intentos fallidos de login (3 → bloqueo) |
+| `SESION` | CHAR(1) | `I`=inactiva, `A`=activa |
+| `USUARIO_CREA` / `FECHA_CREA` / `USUARIO_MODIFICA` / `FECHA_MODIFICA` | | Auditoría |
 
 ---
 
@@ -209,41 +212,44 @@ CALL USP_UPD_INS_RESERVA_CLIENTE(
 ### Módulo Acceso / Auth
 
 ```sql
--- SP multi-acción para autenticación y gestión de sesión
+-- SP multi-acción para autenticación, recuperación y gestión de sesión
 CALL USP_UPD_INS_REGISTRO_CLIENTE(
-    id         INT,     -- 0 = sin ID, >0 = cliente específico
-    email      VARCHAR, -- correo del usuario
-    contrasena VARCHAR, -- hash bcrypt (o 0 si no aplica)
-    accion     INT,     -- ver tabla de acciones en domain-logic.md
-    ip         VARCHAR, -- req.ip
-    server     VARCHAR  -- req.hostname
+    _ID         INT,     -- 0 = sin ID, >0 = cliente específico (opciones 3,6,7,8)
+    _CLIENTE    VARCHAR, -- nº documento (login: op 1,2,4,5) | correo (op 9,10,11) | celular (op 12,13)
+    _CONTRASENA VARCHAR, -- hash bcrypt (op 8,10,12) o 0
+    _OPCION     INT,     -- ver tabla en backend-database-patterns.md
+    _IP         VARCHAR, -- req.ip
+    _SERVER     VARCHAR  -- req.hostname
 )
--- Retorna según acción: datos del cliente, token, conteo de intentos, etc.
+-- Login por NUMERO_DOCUMENTO. CONTRASENA NULL => primer ingreso.
+-- op 12/13 añadidas para recuperar contraseña por celular (envío por WhatsApp).
+-- Backup de la versión previa: app/sql/backup/USP_UPD_INS_REGISTRO_CLIENTE.before.sql
+-- Fuente aplicada: app/sql/USP_UPD_INS_REGISTRO_CLIENTE.sql
 ```
 
 ### Módulo Clientes
 
 ```sql
--- Editar datos del cliente
+-- Editar datos del cliente — 16 parámetros (NO lleva idSucursal/idEmpresa/sesId al final)
 CALL USP_UPD_INS_CLIENTE(
-    id              INT,
-    nombre          VARCHAR,
-    apPaterno       VARCHAR,
-    apMaterno       VARCHAR,
-    tipoDocumento   INT,
-    vip             INT,
-    documento       VARCHAR,
-    direccion       VARCHAR,
-    fechaNacimiento DATE,      -- 'YYYY-MM-DD'
-    celular         VARCHAR,
-    email           VARCHAR,
-    comentario      VARCHAR,
-    imagen          VARCHAR,
-    idSucursal      INT,
-    accion          VARCHAR,   -- 'edita' | 'cambia'
-    idEmpresa       INT,
-    sesId           INT
+    _ID                INT,
+    _NOMBRES           VARCHAR,   -- NOT NULL
+    _APELLIDO_PATERNO  VARCHAR,
+    _APELLIDO_MATERNO  VARCHAR,
+    _ID_TIPO_DOCUMENTO INT,       -- ID_PARAMETRO_DETALLE (param 2)
+    _VIP               INT,       -- preservar el valor actual si el form no lo edita
+    _NUMERO_DOCUMENTO  VARCHAR,   -- UNIQUE (ID_EMPRESA, NUMERO_DOCUMENTO); duplicado => SIGNAL 45000
+    _DIRECCION         VARCHAR,
+    _FECHA_NACIMIENTO  DATETIME,  -- 'YYYY-MM-DD' o NULL
+    _NRO_CELULAR       VARCHAR,
+    _EMAIL             VARCHAR,
+    _CONTRASENA        VARCHAR,   -- NULL en 'edita' (no se toca)
+    _COMENTARIO        VARCHAR,   -- preservar el valor actual si el form no lo edita
+    _IMAGEN            VARCHAR,   -- NULL = conservar la imagen actual
+    _TIPO              VARCHAR,   -- 'crea' | 'edita'  (NO existe 'cambia')
+    _USUACREAMODI      INT        -- ID del que modifica; en la app cliente = ID_CLIENTE propio
 )
+-- La app cliente usa 'edita' desde PUT /api/acceso/datos/:sesId (accesoModels.actualizaDatosCliente).
 ```
 
 ---

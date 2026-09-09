@@ -8,15 +8,34 @@ const joi = require('@hapi/joi');
 //pass
 //notaDebito
 
+// El "usuario" del login es el NUMERO_DOCUMENTO del cliente.
+// La contraseña puede ser el propio documento (primer ingreso) o una contraseña
+// fuerte ya cambiada, por eso solo se valida longitud aquí; la exigencia de
+// contraseña fuerte se aplica al CAMBIARLA (USP_UPD_INS_REGISTRO_CLIENTE opción 8).
 const schemaLogin=joi.object({
-    txtCorreo: joi.string().email().min(6).max(50).required(),
-    txtContrasena: joi.string().regex(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!¡#$%&()*+\-\./:;=¿?@\[\]\{\|\}]).{6,16}$/).min(6).max(16).required(),
+    txtCorreo: joi.string().regex(/^[0-9]{6,15}$/).required(),
+    txtContrasena: joi.string().min(4).max(50).required(),
     idUser:joi.number().allow(''),
     idNivel:joi.number().allow(''),
 });
 
+// "cuenta" = correo electrónico o número de celular (9 dígitos).
 const schemaRecupera=joi.object({
-    correo: joi.string().email().min(1).max(50).required()
+    cuenta: joi.string().min(6).max(60).required()
+});
+
+// Completar / actualizar datos del cliente (pantalla posterior al login).
+const schemaDatosCliente=joi.object({
+    nombre: joi.string().min(1).max(100).required(),
+    apellidoPaterno: joi.string().min(1).max(50).required(),
+    apellidoMaterno: joi.string().min(1).max(50).required(),
+    tipoDocumento: joi.number().required(),
+    documento: joi.string().regex(/^[0-9]{6,15}$/).required(),
+    direccion: joi.string().min(0).max(200).allow(''),
+    fechaNacimiento: joi.string().min(0).max(10).allow(''),
+    celular: joi.string().regex(/^9[0-9]{8}$/).required(),
+    email: joi.string().email().min(6).max(100).required(),
+    sesId: joi.number().required()
 });
 
 const schemaRegister=joi.object({
@@ -458,6 +477,7 @@ const schemaMensajeria=joi.object({
 module.exports = {
     schemaRegister,
     schemaRecupera,
+    schemaDatosCliente,
     schemaOlvidaPassword,
     schemaParametro,
     schemaParametroDetalle,

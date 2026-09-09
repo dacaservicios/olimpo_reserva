@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const passport = require('passport');
-const {isLogin, notLogin, verificarLogin, verificarCorreo, caracter,sesion,validaSchema, privilegios2} = require('../middlewares/auth');
+const {isLogin, notLogin, verificarLogin, verificarCorreo, verificarCuenta, caracter,sesion,validaSchema, privilegios2} = require('../middlewares/auth');
 const {schemaLogin, schemaRegister, schemaRecupera, schemaOlvidaPassword} = require('../middlewares/schema');
+const {recuperaPassword} = require('../models/inicioModels');
 const axios = require('axios');
 const config = require('../config/config');
 
@@ -99,18 +100,16 @@ router.post('/inicio/password', notLogin, validaSchema(schemaOlvidaPassword), as
     
 });
 
-router.post('/inicio/recupera', notLogin, validaSchema(schemaRecupera), verificarCorreo, async(req, res) => {
+router.post('/inicio/recupera', notLogin, validaSchema(schemaRecupera), verificarCuenta, async(req, res) => {
     try {
-        const recupera = await axios.put(config.URL_SISTEMA+"/api/inicio/recupera/10",req.body);
-        res.json({
-            valor : recupera.data.valor
-        });
+        const valor = await recuperaPassword(0, req.body, req.ip, req.hostname);
+        res.json({ valor });
     }catch (err) {
         res.status(400).json({
             error : {
-                message:err.response.data.error.message,
-                errno: err.response.data.error.errno,
-                code :err.response.data.error.code
+                message: err.message,
+                errno: err.errno,
+                code: err.code
             }
         });
     }

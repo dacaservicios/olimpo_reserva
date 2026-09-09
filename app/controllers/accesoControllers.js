@@ -1,4 +1,4 @@
-const {cambiaPassword,salirLogin,verificaPassword} = require('../models/accesoModels');
+const {cambiaPassword,salirLogin,verificaPassword,actualizaDatosCliente} = require('../models/accesoModels');
 
 const password=(req, res)=>{
     const sesId =  req.params.sesId;
@@ -39,6 +39,25 @@ const verificaPass=(req, res)=>{
     });
 }
 
+const datos = (req, res) => {
+    const sesId = req.params.sesId;
+    actualizaDatosCliente(sesId, req.body)
+    .then(valor => {
+        res.json({
+            valor : valor
+        });
+    })
+    .catch(error => {
+        res.status(400).json({
+            error : {
+                message:error.message,
+                errno: error.errno,
+                code : error.code
+            }
+        });
+    });
+}
+
 const logout = async (req, res) => {
     const sesId = req.params.sesId;
     const ip    = req.ip;
@@ -63,5 +82,6 @@ const logout = async (req, res) => {
 module.exports = {
     password,
     verificaPass,
+    datos,
     logout
 }

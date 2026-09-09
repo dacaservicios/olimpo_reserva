@@ -48,9 +48,19 @@ TAMANO_ADJUNTO, MAX_ANCHO, MAX_ALTO                 → validación de archivos
 
 ## Autenticación — Doble mecanismo
 
+> **El "usuario" del login es el `NUMERO_DOCUMENTO` del cliente** (no el correo).
+> El campo del formulario sigue llamándose `txtCorreo` por compatibilidad, pero contiene el documento.
+> **Primer ingreso:** si `MAE_CLIENTE.CONTRASENA` es NULL, la contraseña válida es el propio
+> número de documento; tras entrar, la app **obliga** a crear una contraseña fuerte (pantalla
+> bloqueante en `#cuerpoPrincipal`, `mostrarGateCambiaPass()` en `sistema.ejs`).
+> **Perfil incompleto:** si falta `NUMERO_DOCUMENTO`, `NRO_CELULAR` o `EMAIL` (o con formato
+> inválido), en cada login aparece un aviso **posponible** para completar los datos
+> (`promptCompletaPerfil()` → `abrirFormPerfil()` → `PUT /api/acceso/datos/:sesId`).
+> Ambas señales las calcula `GET /api/inicio/datos/:sesId` (`debeCambiarPass`, `perfilIncompleto`, `faltan[]`).
+
 ### 1. Sesión Passport (vistas EJS)
 - Estrategia: `passport-local` (`'local.login'`)
-- Campos: `txtCorreo` (usernameField), `txtContrasena` (passwordField)
+- Campos: `txtCorreo` (usernameField = **nº documento**), `txtContrasena` (passwordField)
 - Serialización: serializa el objeto `user` completo
 - Deserialización: llama `buscarCliente(user.id, 'cliente', user.id)`
 - Sesión almacenada en MariaDB via `express-mysql-session`
@@ -67,12 +77,33 @@ TAMANO_ADJUNTO, MAX_ANCHO, MAX_ALTO                 → validación de archivos
 
 ### Flujo de login completo
 ```
-1. POST /inicio/login (inicioApi)
-2. middleware verificarLogin (auth.js) → valida password con bcrypt + audita IP
-3. Si ok: Passport done(null, user) + JWT generado
-4. Frontend guarda JWT en localStorage
-5. Requests API: siempre incluir header Authorization: Bearer <token>
+1. POST /inicio/verificaLogin (routes/inicioRouter) → middleware verificarLogin (auth.js)
+   - SP op 2 (WHERE NUMERO_DOCUMENTO) → hash. NULL => válido si txtContrasena == documento.
+   - hash presente => bcrypt. Falla => SP op 4 (INTENTO++). 3 => bloqueo (tipo 3).
+   - OK => SP op 1 (audita, SESION='A') → responde { resultado:true, idUser }
+2. POST /inicio/verificaLoginOk → passport 'local.login' → inicioModels.login()
+   - SP op 1 + genera JWT { data:{ id, idSucursal, idEmpresa } } + SP op 3 (reactiva sesión)
+3. Frontend guarda JWT en localStorage['token'] y redirige a /sistema
+4. /sistema → general.js datosUsuario() → GET /api/inicio/datos/:sesId
+   - debeCambiarPass  => pantalla bloqueante de nueva contraseña (NO carga Reservas)
+   - perfilIncompleto => aviso posponible "completa tu información"
+   - normal           => carga Reservas
+5. Requests API: siempre header Authorization: Bearer <token>
 ```
+
+### Restablecer contraseña (olvido)
+```
+POST /inicio/recupera  body { cuenta }   (cuenta = correo | celular 9 díg.)
+  - verificarCuenta (auth.js): correo => SP op 9 ; celular => SP op 13  (verifica existencia)
+  - inicioModels.recuperaPassword():
+      correo  => SP op 10 + enviaEmail(nueva contraseña)
+      celular => SP op 12 + axios POST config.URL_WHATSAPP { phone:'51'+cel, message, sender:NRO_WHATSAPP }
+```
+
+### Cambiar contraseña
+- `PUT /api/acceso/password/:sesId` → `accesoModels.cambiaPassword` → SP op 8.
+- Valida contraseña fuerte en el servidor (6–16, may/min/número/especial) — bloquea usar el documento.
+- Body `{ inicial:true }` (pantalla del primer ingreso) → además ejecuta SP op 3 para no cortar la sesión.
 
 ---
 

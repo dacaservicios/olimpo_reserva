@@ -17,42 +17,79 @@
 
     <!-- Card del formulario -->
     <div class="login-card">
-        <h2 class="login-title">Iniciar sesión</h2>
-        <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
 
-        <form id="login" class="needs-validation" novalidate>
+        <!-- ══════════ INICIAR SESIÓN ══════════ -->
+        <div id="loginPane">
+            <h2 class="login-title">Iniciar sesión</h2>
+            <p class="login-subtitle">Ingresa con tu número de documento</p>
 
-            <div class="login-field">
-                <label>Correo electrónico</label>
-                <div class="login-input-wrapper">
-                    <i class="las la-envelope input-icon"></i>
-                    <input class="form-control" name="txtCorreo"
-                        placeholder="ejemplo@correo.com" type="text" autocomplete="email" required>
+            <form id="login" class="needs-validation" novalidate>
+
+                <div class="login-field">
+                    <label>Número de documento</label>
+                    <div class="login-input-wrapper">
+                        <i class="las la-id-card input-icon"></i>
+                        <input class="form-control" name="txtCorreo" inputmode="numeric"
+                            placeholder="Ej. 44556677" type="text" autocomplete="username" required>
+                    </div>
+                    <div class="vacio oculto">¡Campo obligatorio!</div>
+                    <div class="formato oculto">¡Debe tener entre 6 y 15 dígitos!</div>
                 </div>
-                <div class="vacio oculto">¡Campo obligatorio!</div>
-                <div class="formato oculto">¡Formato incorrecto!</div>
-            </div>
 
-            <div class="login-field">
-                <label>Contraseña</label>
-                <div class="login-input-wrapper">
-                    <i class="las la-lock input-icon"></i>
-                    <input class="form-control" name="txtContrasena"
-                        placeholder="••••••••" type="password" autocomplete="current-password" required>
-                    <span id="verPass" class="login-eye" title="Mostrar/ocultar">
-                        <i class="las la-low-vision"></i>
-                    </span>
+                <div class="login-field">
+                    <label>Contraseña</label>
+                    <div class="login-input-wrapper">
+                        <i class="las la-lock input-icon"></i>
+                        <input class="form-control" name="txtContrasena"
+                            placeholder="••••••••" type="password" autocomplete="current-password" required>
+                        <span id="verPass" class="login-eye" title="Mostrar/ocultar">
+                            <i class="las la-low-vision"></i>
+                        </span>
+                    </div>
+                    <div class="vacio oculto">¡Campo obligatorio!</div>
+                    <div class="formato oculto">¡Formato incorrecto!</div>
                 </div>
-                <div class="vacio oculto">¡Campo obligatorio!</div>
-                <div class="formato oculto">¡Formato incorrecto!</div>
-            </div>
 
-            <button type="button" class="submit btn btn-primary login-btn w-100">
-                <i class="las la-sign-in-alt"></i>
-                Iniciar sesión
-            </button>
+                <button type="button" class="submit btn btn-primary login-btn w-100">
+                    <i class="las la-sign-in-alt"></i>
+                    Iniciar sesión
+                </button>
 
-        </form>
+                <button type="button" class="olvidaste btn btn-link w-100 mt-2">
+                    ¿Olvidaste tu contraseña?
+                </button>
+
+            </form>
+        </div>
+
+        <!-- ══════════ RESTABLECER CONTRASEÑA ══════════ -->
+        <div id="recoveryPane" style="display:none;">
+            <h2 class="login-title">Restablecer contraseña</h2>
+            <p class="login-subtitle">Te enviaremos una contraseña nueva</p>
+
+            <form id="recovery" class="needs-validation" novalidate>
+                <div class="login-field">
+                    <label>Correo electrónico o celular</label>
+                    <div class="login-input-wrapper">
+                        <i class="las la-paper-plane input-icon"></i>
+                        <input class="form-control" name="cuenta"
+                            placeholder="correo@ejemplo.com o 9XXXXXXXX" type="text" autocomplete="off" required>
+                    </div>
+                    <div class="vacio oculto">¡Campo obligatorio!</div>
+                    <div class="formato oculto">¡Ingresa un correo válido o un celular de 9 dígitos!</div>
+                    <div class="login-hint">Si ingresas tu correo la recibirás por email; si ingresas tu celular, por WhatsApp.</div>
+                </div>
+
+                <button type="button" class="recuperar btn btn-primary login-btn w-100">
+                    <i class="las la-redo-alt"></i>
+                    Enviar contraseña nueva
+                </button>
+
+                <button type="button" class="volverLogin btn btn-link w-100 mt-2">
+                    <i class="las la-arrow-left"></i> Volver al inicio de sesión
+                </button>
+            </form>
+        </div>
 
         <p class="login-footer-text">© 2025 AyniSystem · Olimpo Barbería</p>
     </div>

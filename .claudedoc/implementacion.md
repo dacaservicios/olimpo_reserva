@@ -7,7 +7,22 @@
 
 ## TAREA ACTUAL / PENDIENTES
 
-*(sin pendientes abiertos actualmente)*
+### [x] Login por número de documento + primer ingreso + recuperación (2026-09-09)
+- Login: usuario = `NUMERO_DOCUMENTO`. Primera vez, contraseña = documento (`CONTRASENA` NULL en BD).
+- Tras el primer login: pantalla **bloqueante** que obliga a crear contraseña fuerte.
+- En cada login posterior: aviso **posponible** para completar `documento / celular / correo`
+  (formulario del cliente sin VIP / comentario / imagen) → `PUT /api/acceso/datos/:sesId`.
+- "¿Olvidaste tu contraseña?": acepta correo **o** celular. Correo → email; celular → WhatsApp
+  (sender = `NRO_WHATSAPP` de la sucursal del cliente).
+- BD: `USP_UPD_INS_REGISTRO_CLIENTE` reescrito (op 1/2/4 por `NUMERO_DOCUMENTO`; op 10 corregida;
+  op 12/13 nuevas). Fuente en `app/sql/`, backup en `app/sql/backup/`.
+- Pendiente de validar en el server de producción tras `NODE_ENV=production` + reinicio.
+
+**Efecto secundario durante pruebas:** al probar la recuperación por celular se envió un WhatsApp
+real al cliente ID 479 (`Lenin Alarcon`, 967754474). Su `CONTRASENA` se restauró a NULL. Avisar si
+ese número corresponde a un cliente real en uso.
+
+*(sin otros pendientes abiertos)*
 
 > **Nota de arquitectura:** `olimpo_reserva` es la app **cliente** (consumo: reservar, ver Mis Citas, perfil propio). Empleados, Parámetros, Servicios por Sucursal y Sucursales son intencionalmente **solo lectura** aquí — el CRUD completo de esas entidades se hace desde una **app administrativa separada**, no desde este repo. No listar "completar CRUD de X" como pendiente de este proyecto salvo que el usuario indique explícitamente que se agregará gestión administrativa aquí.
 
