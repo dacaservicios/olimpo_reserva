@@ -1029,7 +1029,6 @@ async function _wizLoadMensajeSucursal() {
 
 	if (msg && msg.VALOR) {
 		$('#wizMensajeSucursalBox').html(`
-			<div class="wiz-field-label"><i class="las la-info-circle"></i> ${msg.DESCRIPCION || 'Aviso'}</div>
 			<div class="wiz-mensaje-sucursal">${msg.VALOR}</div>
 		`).show();
 	} else {
