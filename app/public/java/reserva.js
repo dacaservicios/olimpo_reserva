@@ -230,7 +230,9 @@ function verDetalleReserva(evt, soloLectura = false) {
 
 	_resDetalle = evt;
 
-	const estadoBadge = _resEstadoBadge(evt.ESTADO || evt.ID_ESTADO);
+	// TRS_RESERVA no tiene columna de estado: la reserva está atendida cuando el
+	// sistema administrativo registró su atención (USP_UPD_TRS_ATENCION llena ID_ATENCION)
+	const estadoBadge = _resEstadoBadge(evt.ID_ATENCION ? 'COMPLETADO' : 'PENDIENTE');
 
 	$('#general1').removeClass('wiz-active');
 	mostrar_general1({

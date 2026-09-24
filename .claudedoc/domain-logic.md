@@ -16,7 +16,7 @@
 | `COMENTARIO` | VARCHAR(250) | `_wiz.comentario` | Nota del cliente |
 | `IMAGEN` | VARCHAR(150) | `_wiz.imagenFile` / `evt.IMAGEN` | Nombre del archivo de foto de referencia — agregado 2026-08-13, columna nueva en `TRS_RESERVA`. Servida en `/imagenes/reserva/{IMAGEN}` |
 | `TIPO_CLIENTE` | INT FK | `_wiz.tipoClienteId` | ID_PARAMETRO_DETALLE (tipo: Adulto/Menor) |
-| `ESTADO` | INT | `evt.ESTADO` | Estado de la reserva |
+| `ID_ATENCION` | INT FK (nullable) | `evt.ID_ATENCION` | Atención generada desde esta reserva en el sistema administrativo (`USP_UPD_TRS_ATENCION` la llena). **No existe columna `ESTADO`**: el estado se deriva de este campo (ver "Estados de entidades") |
 
 **Campos adicionales devueltos por el SP `USP_SEL_VERLISTA` ('reserva_cliente'):**
 | Campo SP | Descripción |
@@ -102,12 +102,14 @@ Campos del detalle:
 ## Estados de entidades
 
 ### Reserva — estados del badge
-| ESTADO int | Etiqueta | Color | Badge Bootstrap |
-|---|---|---|---|
-| 1 | PENDIENTE | Naranja | `bg-warning text-dark` |
-| 2 | CONFIRMADO | Verde | `bg-success` |
-| 3 | CANCELADO | Rojo | `bg-danger` |
-| 4 | COMPLETADO | Azul | `bg-info text-dark` |
+`TRS_RESERVA` **no tiene columna de estado** (verificado 2026-09-23). El badge del detalle (`verDetalleReserva` → `_resEstadoBadge`) se deriva de `ID_ATENCION`:
+
+| Condición | Etiqueta | Color |
+|---|---|---|
+| `ID_ATENCION` con valor | COMPLETADO | Azul |
+| `ID_ATENCION` NULL | PENDIENTE | Naranja |
+
+`CONFIRMADO` / `CANCELADO` siguen en el mapa de colores de `_resEstadoBadge` pero hoy no hay dato en BD que los produzca (una reserva cancelada se elimina con soft-delete y deja de listarse). Antes se leía `evt.ESTADO || evt.ID_ESTADO`, que siempre llegaba vacío → toda reserva se veía PENDIENTE aunque ya estuviera atendida.
 
 ### Restricción de unicidad en TRS_RESERVA
 ```sql
