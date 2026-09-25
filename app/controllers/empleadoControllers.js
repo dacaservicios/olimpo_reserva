@@ -23,7 +23,7 @@ const listar=(req, res)=>{
 const buscar=(req, res)=>{
     const sesId =  req.params.sesId;
     const id =  req.params.id;
-    buscarEmpleado(id,'empleado',sesId)
+    buscarEmpleado(id,'empleado_reserva',sesId)
     .then(valor => {
         res.json({
             valor : valor

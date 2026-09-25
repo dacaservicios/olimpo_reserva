@@ -88,7 +88,10 @@ const server = app.listen(config.PORT, ()=>{
 });
 
 SocketIO(server);
-cronNode();
+// Desactivado (2026-09-25, decisión del usuario): estos cron eran una copia de los de olimpo (verificar pagos, flujo de
+// caja diario, mensajes masivos de WhatsApp) y llamaban a la API de olimpo a la misma hora → mensajes duplicados. Los dos
+// del dashboard llamaban a /api/inicio/dashboard, que no existe. Los cron quedan solo en olimpo (app/config/cron.js).
+// cronNode();
 
 module.exports = {
     app:app

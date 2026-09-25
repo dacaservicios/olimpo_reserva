@@ -3,7 +3,7 @@ const {listarSucursal} = require('../models/sucursalModels');
 const listar=(req, res)=>{
     const id =  req.params.id;
     const sesId=req.params.sesId;
-    listarSucursal(id,'sucursal',sesId)
+    listarSucursal(id,'sucursal_reserva',sesId)
     .then(valor => {
         res.json({
             valor : valor

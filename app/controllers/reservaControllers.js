@@ -65,7 +65,7 @@ const mensajeSucursal=(req, res)=>{
 const buscar=(req, res)=>{
     const sesId =  req.params.sesId;
     const id =  req.params.id;
-    buscarReserva(id,'reserva',sesId)
+    buscarReserva(id,'reserva_cliente',sesId)
     .then(valor => {
         res.json({
             valor : valor
@@ -152,7 +152,7 @@ const editarDD=(req, res)=>{
 
 const eliminar=(req, res)=>{
     const id =  req.params.id;
-    eliminarReserva(id,'reserva')
+    eliminarReserva(id,'reserva_cliente',req.usuario.data.id)
     .then(valor => {
         res.json({
             valor : valor
@@ -171,7 +171,7 @@ const eliminar=(req, res)=>{
 
 const estado=(req, res)=>{
     const id =  req.params.id;
-    estadoReserva(id,'reserva')
+    estadoReserva(id,'reserva_cliente',req.usuario.data.id)
     .then(valor => {
         res.json({
             valor : valor

@@ -105,7 +105,7 @@ const actualizaDatosCliente = async (sesId, body)=>{
         null,
         comentario,
         null,
-        'edita',
+        'editaCli', // el SP valida que el cliente se edite a sí mismo (_ID = sesId)
         sesId
     ]);
 

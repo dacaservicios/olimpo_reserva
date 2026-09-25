@@ -250,12 +250,14 @@ const listarReserva = async (id, tabla,sesId)=>{
 }
 
 
-const eliminarReserva = async(id,tabla)=>{
-    const query = `CALL USP_DEL_ELIMINA(?, ?)`;
+const eliminarReserva = async(id,tabla,sesId)=>{
+    // tabla 'reserva_cliente' + sesId = ID del cliente (del token): el SP valida que la reserva sea suya
+    const query = `CALL USP_DEL_ELIMINA(?, ?, ?)`;
     const row =  await pool.query(query,
     [
         id,
-        tabla
+        tabla,
+        sesId
     ]);
 
     moment.locale('es');
@@ -310,12 +312,14 @@ Cuando quieras agendar una nueva cita, estamos a tu disposición. 💈
 
 }
 
-const estadoReserva = async(id,tabla)=>{
-    const query = `CALL USP_UPD_ESTADO(?, ?)`;
+const estadoReserva = async(id,tabla,sesId)=>{
+    // tabla 'reserva_cliente' + sesId = ID del cliente (del token): el SP valida que la reserva sea suya
+    const query = `CALL USP_UPD_ESTADO(?, ?, ?)`;
     const row =  await pool.query(query,
     [
         id,
-        tabla
+        tabla,
+        sesId
     ]);
 
     return { 

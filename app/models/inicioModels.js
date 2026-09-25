@@ -36,6 +36,7 @@ const login = async (ip,server,body)=>{
                 id : datos.ID_CLIENTE,
                 idSucursal : datos.ID_SUCURSAL,
                 idEmpresa : datos.ID_EMPRESA,
+                tipo: 'cliente' // verificarToken rechaza cualquier otro tipo (p.ej. tokens de usuario de olimpo)
             }
         },
         config.SEED,
@@ -76,7 +77,7 @@ const datosUsuario = async (id)=>{
     const row1 = await pool.query(query1,
     [
         id,
-        'cliente',
+        'cliente_reserva',   // rama de la app pública: el cliente solo se consulta a sí mismo
         id
     ]);
 

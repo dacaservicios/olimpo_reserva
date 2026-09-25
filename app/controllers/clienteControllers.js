@@ -43,7 +43,7 @@ const listar_wp=(req, res)=>{
 const buscar=(req, res)=>{
     const sesId =  req.params.sesId;
     const id =  req.params.id;
-    buscarCliente(id,'cliente',sesId)
+    buscarCliente(id,'cliente_reserva',sesId)
     .then(valor => {
         res.json({
             valor : valor

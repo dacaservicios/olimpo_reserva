@@ -10,12 +10,18 @@ const buscarCliente = async(id,tabla,sesId)=>{
         sesId
     ]);
 
-    return { 
+    // 'cliente_reserva' trae CONTRASENA (inicioModels la necesita en el servidor): el hash nunca debe salir al frontend.
+    const info = row[0][0];
+    if(info){
+        delete info.CONTRASENA;
+    }
+
+    return {
         resultado : true,
-        info : row[0][0],
+        info : info,
         mensaje : '¡Exito!'
-    }; 
-    
+    };
+
 }
 
 const listarCliente = async (id, tabla,sesId)=>{
