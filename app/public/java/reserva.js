@@ -603,8 +603,9 @@ async function nuevaReservaFecha(dateStr) {
 		const [rServicio, rEmpleado, rCliente, rTipos, rSucursal] = await Promise.all([
 			axios.get(`/api/serviciosucursal/listar/0/${verSesion()}`,      { headers: { authorization: `Bearer ${verToken()}` } }),
 			axios.get(`/api/empleado/listar/0/${verSesion()}`,              { headers: { authorization: `Bearer ${verToken()}` } }),
-			axios.get(`/api/cliente/listar/0/${verSesion()}`,               { headers: { authorization: `Bearer ${verToken()}` } })
-				.catch(() => ({ data: { valor: { info: [] } } })),
+			// El cliente logueado solo reserva para sí mismo: se trae su propio registro.
+			axios.get(`/api/cliente/buscar/${verSesion()}/${verSesion()}`,   { headers: { authorization: `Bearer ${verToken()}` } })
+				.catch(() => ({ data: { valor: { info: null } } })),
 			axios.get(`/api/parametro/detalle/listar/64/${verSesion()}`,    { headers: { authorization: `Bearer ${verToken()}` } })
 				.catch(() => ({ data: { valor: { info: [] } } })),
 			axios.get(`/api/sucursal/listar/${verEmpresa()}/${verSesion()}`,              { headers: { authorization: `Bearer ${verToken()}` } })
@@ -619,18 +620,8 @@ async function nuevaReservaFecha(dateStr) {
 			const d = e.ID_DESCANSO ? e.ID_DESCANSO.split(',').map(Number) : [];
 			return !d.includes(diaSemana);
 		});
-		_wizData.clientes = rCliente.data.valor.info || [];
-
-		// Fallback: at least one client
-		if (!_wizData.clientes.length) {
-			try {
-				const rb = await axios.get(`/api/cliente/buscar/${verSesion()}/${verSesion()}`, {
-					headers: { authorization: `Bearer ${verToken()}` }
-				});
-				const c = rb.data.valor.info;
-				if (c && c.ID_CLIENTE) _wizData.clientes = [c];
-			} catch (e2) { /* empty is OK */ }
-		}
+		const cliente = rCliente.data.valor.info;
+		_wizData.clientes = (cliente && cliente.ID_CLIENTE) ? [cliente] : [];
 
 	} catch (err) {
 		desbloquea();

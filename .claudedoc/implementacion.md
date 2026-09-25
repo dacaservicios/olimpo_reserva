@@ -7,42 +7,20 @@
 
 ## TAREA ACTUAL / PENDIENTES
 
-### [ ] Cron desactivados (2026-09-25, decisión del usuario) — pendiente de desplegar
-- `cronNode()` quedó comentado en `app/config/server.js`. `app/config/cron.js` se conserva sin cambios.
-- Los 5 cron eran una copia de los de olimpo: verificar pagos (10:00), flujo de caja diario (08:00) y mensajes masivos de WhatsApp (12:00). Llamaban a la API de olimpo a la misma hora que los originales, lo que producía mensajes duplicados. Los 2 por hora del dashboard llamaban a `/api/inicio/dashboard`, que no existe en olimpo.
-- Además, desde la Fase 5 de olimpo esas rutas exigen un token de servicio que esta app no tiene. Los cron viven solo en olimpo.
+### [x] API de cliente reducida a `buscar` (2026-09-25, solo local — falta desplegar)
+- Se quitaron tres rutas; la UI no usaba ninguna:
+  - `GET /api/cliente/listar`: la rama `'cliente'` de olimpo filtra por la empresa del `SEG_USUARIO` cuyo ID coincide con el ID del cliente. Si un cliente tenía el mismo ID que un usuario, recibía **todos los clientes** de esa empresa.
+  - `GET /api/cliente/listar_wp`: la rama `'cliente_wp'` marcaba como leída y devolvía la mensajería/WhatsApp de cualquier sucursal pasada por la URL.
+  - `PUT /api/cliente/editar`: el modelo `editarCliente` estaba roto. El perfil se edita con `PUT /api/acceso/datos/:sesId`.
+- Se reescribieron `clienteApi.js`, `clienteControllers.js` y `clienteModels.js`, que quedan solo con `buscar` (`'cliente_reserva'`).
+- En `reserva.js` (`nuevaReservaFecha`), el paso de cliente usa directamente `/api/cliente/buscar/{sesId}/{sesId}`, sin el fallback anterior.
+- [ ] Probar en el navegador "Nueva Reserva": el paso de cliente debe mostrar al cliente logueado.
 
-### [ ] Hash de contraseña fuera de las respuestas (2026-09-25) — probado en local, pendiente de desplegar
-- `clienteModels.buscarCliente` (`GET /api/cliente/buscar`, rama `'cliente_reserva'`) devolvía `CONTRASENA` (hash) al navegador. Ahora la borra antes de responder, igual que ya hacía `inicioModels.datosUsuario`.
-- La rama `'cliente_reserva'` sigue trayendo `CONTRASENA`, porque `datosUsuario` la necesita en el servidor. En olimpo se quitó `CONTRASENA`/`CLAVE` de las ramas `'usuario'`/`'cliente'` (script `olimpo/.scratch_sp/seguridad_columnas_sensibles.sql`).
+> El ajuste por el multitenant de olimpo está en producción desde 2026-09-25: ver `historico.md`.
 
-### [ ] Fase 4 parte C de olimpo (2026-09-25) — solo BD, probado en local, pendiente de desplegar
-- `USP_UPD_INS_RESERVA_CLIENTE` ahora valida, en todos los tipos, que el cliente reserve solo para sí mismo (`body.cliente` = el cliente del token, o 0), con empleado, servicio y sucursal de su empresa. Si no → *"¡Uno de los datos seleccionados no pertenece a su empresa!"*.
-- El asistente de reserva ya manda al propio cliente, así que el flujo normal no cambia. Esta app no tiene cambios de código en esta parte. Script: `olimpo/.scratch_sp/multitenant_fase4_referencias.sql`.
-
-### [x] Ajuste por el multitenant del sistema olimpo (2026-09-24) — **desplegado en producción 2026-09-25** junto con olimpo
-El sistema interno (repo `olimpo`) aisló por empresa los SPs compartidos. Ahí el `_idSesion` es un usuario de `SEG_USUARIO`, y aquí es el **ID del cliente**. Por eso esta app usa ahora ramas propias, filtradas por la empresa del cliente (script de BD en `olimpo/.scratch_sp/multitenant_reserva_publica.sql`):
-- `VERLISTAID 'cliente_reserva'` (antes `'cliente'`): el cliente solo se consulta a sí mismo. Se usa en `clienteControllers.buscar` e `inicioModels.datosUsuario`.
-- `VERLISTA 'sucursal_reserva'` (antes `'sucursal'`, en `sucursalControllers.listar`): solo sucursales de la empresa del cliente.
-- `VERLISTAID 'empleado_reserva'` (antes `'empleado'`, en `empleadoControllers.buscar`): solo empleados de la empresa del cliente.
-- `VERLISTA 'empleado_reserva'` / `'servicioSucursal_reserva'`: mismos nombres, pero ahora filtran por la empresa del cliente (antes devolvían todas las empresas).
-- `VERLISTAID 'reserva_cliente'` (antes `'reserva'`, en `reservaControllers.buscar`): solo reservas del propio cliente. La rama interna `'reserva'` calculaba `@NIVEL` desde `SEG_USUARIO` con el ID del cliente y en la práctica no devolvía filas.
-- `USP_DEL_ELIMINA` / `USP_UPD_ESTADO` tienen un **3er parámetro** `_idSesion`. `reservaModels.eliminarReserva/estadoReserva` pasan `0`, porque la rama `'reserva'` no lo usa.
-- **Socket (sincronizado con olimpo):** se quitaron de `config/webSocket.js` y `public/java/webSocket.js` los eventos del módulo Pedido/mesa, eliminado en olimpo, que nadie emitía (`creaPedido*`, `editaPedido*`, `eliminaPedido`, `actualizaEstadoPedido(Mozo)`, `actualizaFechaPedido`, `actualizaMesas`, `actualizaImpresion`, `actualizaStockCarta(Abastecer)`, `cerrarVenta`, `sunatPedido`, `joinMozo/Cajero/Administrador/CajeroAdministrador`). El respaldo está en `olimpo/.scratch_sp/backups/socket_20260924/olimpo_reserva/`.
-- **Lote 3.5 de olimpo (sin impacto aquí):** se filtraron por empresa `VERLISTAID 'pagosMembresia'` y `'miParametroDetalle'` (`olimpo/.scratch_sp/multitenant_lote35.sql`). Esta app no usa esas ramas; `'parametroDetalle'` (la que sí usa) no cambió.
-- **Fase 4 de olimpo (escritura):**
-  - `verificarToken` reemplaza `sesId` (params y body) por el ID del cliente del JWT, igual que olimpo. Un cliente ya no puede pasar el ID de otro.
-  - Eliminar/estado de reserva: `reservaControllers` pasa `('reserva_cliente', req.usuario.data.id)` a `eliminarReserva`/`estadoReserva`. El SP valida que la reserva sea del cliente. Antes pasaba `0` y no validaba nada.
-  - Editar perfil (`accesoModels.actualizaDatosCliente`): tipo `'editaCli'` en `USP_UPD_INS_CLIENTE`. El cliente solo se edita a sí mismo.
-  - Editar reserva / arrastrar en el calendario (`USP_UPD_INS_RESERVA_CLIENTE`, `edita`/`editaDD`): el SP valida que la reserva sea del cliente (`body.sesId`, ahora del token).
-  - Scripts de BD: `olimpo/.scratch_sp/multitenant_fase4_generico.sql` y `multitenant_fase4_edita.sql`. **Desplegar junto con olimpo:** con los SPs nuevos, el código viejo de esta app no puede eliminar ni cambiar el estado de reservas.
-- Pendiente (hallazgos, sin tocar):
-  - ~~**CRÍTICO:** esta app y olimpo usaban el mismo `SEED` JWT~~ → **corregido en local (2026-09-24):**
-    - `SEED` nuevo en `app/config/.env.development` y `.env.production`.
-    - El token lleva `tipo: 'cliente'` (`inicioModels`) y `verificarToken` rechaza cualquier otro tipo. olimpo hace lo mismo con `tipo: 'usuario'`.
-    - **Producción:** el servidor tiene que usar el `SEED` nuevo, y las dos apps se despliegan juntas. Los clientes tendrán que volver a iniciar sesión.
-  - `clienteModels.editarCliente` (`PUT /api/cliente/editar/:id`) está roto: escribe `0` seguido de `(...)`, lo que es una llamada a función y falla al ejecutarse. La UI no lo usa.
-  - `VERLISTA 'cliente'` (listar clientes) y `'reserva_cliente'` siguen usando las ramas internas.
+### [x] Revisado: correlativo `NUMERO_BAJA` por empresa en olimpo (2026-09-25, solo local)
+- olimpo parcheó `USP_UPD_INS_DETALLE 'venta'` (script `multitenant_numero_baja.sql`).
+- **Sin impacto aquí:** esta app llama a `USP_UPD_INS_DETALLE` solo con `'mensajeReserva'` y con la tabla de `listarReservaDetalle`, nunca con `'venta'`. No hace falta desplegarla junto con olimpo.
 
 ### [x] Login por número de documento + primer ingreso + recuperación (2026-09-09)
 - Login: usuario = `NUMERO_DOCUMENTO`. Primera vez, contraseña = documento (`CONTRASENA` NULL en BD).

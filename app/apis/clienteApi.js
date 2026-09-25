@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const {editar,buscar,listar,listar_wp} = require('../controllers/clienteControllers');
+const {buscar} = require('../controllers/clienteControllers');
 const {verificarToken} = require('../middlewares/jwt');
-const {schemaCliente} = require('../middlewares/schema');
-const {caracter, validaSchema, verificaAdjunto} = require('../middlewares/auth');
 
-router.get('/api/cliente/listar/:id/:sesId', verificarToken, listar);
-router.get('/api/cliente/listar_wp/:id/:sesId', verificarToken, listar_wp);
+// Solo el propio cliente (rama 'cliente_reserva'). Se quitaron listar / listar_wp / editar: usaban ramas internas
+// de olimpo ('cliente' filtra por la empresa de un SEG_USUARIO con el ID del cliente; 'cliente_wp' exponía la
+// mensajería de cualquier sucursal) y la UI no los usaba. El perfil se edita con PUT /api/acceso/datos/:sesId.
 router.get('/api/cliente/buscar/:id/:sesId', verificarToken, buscar);
-router.put('/api/cliente/editar/:id', caracter, validaSchema(schemaCliente), verificaAdjunto, verificarToken, editar);
 
 module.exports = router;

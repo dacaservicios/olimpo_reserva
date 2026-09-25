@@ -10,6 +10,24 @@
 
 ## Épicas completadas
 
+### [x] Multitenant de olimpo — ajustes en esta app (2026-09-24 → 2026-09-25, desplegado en producción 2026-09-25 junto con olimpo)
+En olimpo `_idSesion` es un usuario de `SEG_USUARIO`; aquí es el **ID del cliente**. Los SPs compartidos se aislaron por empresa, así que esta app usa ramas y tipos propios, filtrados por la empresa del cliente:
+- **Lectura:**
+  - `VERLISTAID 'cliente_reserva'`: el cliente solo se consulta a sí mismo. La rama trae `CONTRASENA` porque `inicioModels.datosUsuario` la usa en el servidor; `clienteModels.buscarCliente` la borra antes de responder.
+  - `VERLISTA 'sucursal_reserva'`, `VERLISTAID 'empleado_reserva'`, y `VERLISTA 'empleado_reserva'`/`'servicioSucursal_reserva'`: solo datos de la empresa del cliente.
+  - `VERLISTAID 'reserva_cliente'`: solo sus reservas.
+- **Escritura:**
+  - Eliminar/estado de reserva pasan `('reserva_cliente', ID del cliente del token)`.
+  - Editar perfil usa el tipo `'editaCli'` de `USP_UPD_INS_CLIENTE`: el cliente solo se edita a sí mismo.
+  - `USP_UPD_INS_RESERVA_CLIENTE`: crear, editar y mover (`editaDD`) solo reservas propias, para sí mismo, con empleado, servicio y sucursal de su empresa.
+- **Token:**
+  - `verificarToken` reemplaza `sesId` (params y body) por el ID del cliente del JWT.
+  - `SEED` propio, distinto al de olimpo.
+  - El token lleva `tipo: 'cliente'`, y cada app rechaza el tipo de la otra.
+- **Socket:** se quitaron los eventos del módulo Pedido/mesa, eliminado en olimpo. Respaldo en `olimpo/.scratch_sp/backups/socket_20260924/olimpo_reserva/`.
+- **Cron desactivados:** `cronNode()` quedó comentado en `config/server.js` (`cron.js` se conserva). Eran copias de los de olimpo, que duplicaban los WhatsApp, y los 2 del dashboard llamaban a `/api/inicio/dashboard`, que no existe. Los cron viven solo en olimpo.
+- Scripts de BD (en `olimpo/.scratch_sp/`): `multitenant_reserva_publica`, `multitenant_fase4_generico`, `multitenant_fase4_edita`, `multitenant_fase4_referencias`, `seguridad_columnas_sensibles`. Prueba: `olimpo/.scratch_sp/reserva_publica_test.js`.
+
 ### [x] Migración de tema UI: VALEX → Material Design Android (2025-05)
 - Eliminada plantilla VALEX completa (`assets/plugins/`, `librerias/adminlte`).
 - Eliminadas librerías: select2, DataTables, jquery-ui, inputmask, bootstrap-datepicker.
