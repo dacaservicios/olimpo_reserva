@@ -7,14 +7,9 @@
 
 ## TAREA ACTUAL / PENDIENTES
 
-> El ajuste por el multitenant de olimpo y la reducción de la API de cliente están en producción desde 2026-09-25: ver `historico.md`.
+> El ajuste por el multitenant de olimpo, la reducción de la API de cliente y la limpieza de sockets están en producción desde 2026-09-25: ver `historico.md`.
 
 - [ ] Confirmar en producción que en "Nueva Reserva" el paso de cliente muestra al cliente logueado (tras quitar `/api/cliente/listar`).
-
-### [x] Sockets: relays y listeners sin emisor quitados (2026-09-25, solo local — falta desplegar junto con olimpo)
-- El servidor de sockets de esta app es independiente del de olimpo, y sus clientes no emiten nada: hasta los joins de `general.js` están comentados.
-- `app/config/webSocket.js` queda solo con `joinUsuario`/`joinNivel`/`joinSucursal`. `app/public/java/webSocket.js` queda solo con la conexión (`var socket`, que usa `general.js`).
-- Se quitaron `actualizaModulo`, `actualizaAcceso`, `actualizaFechaServicio`, `sunatVenta`, `actualizaCaja`, `actualizaNombreSucursal`, `actualizaLogoSucursal`, `actualizaSaldo*`, `loginUsuario*`, `vibracion`, `notificacion` y `opcionesToast`.
 
 ### [x] Login por número de documento + primer ingreso + recuperación (2026-09-09)
 - Login: usuario = `NUMERO_DOCUMENTO`. Primera vez, contraseña = documento (`CONTRASENA` NULL en BD).

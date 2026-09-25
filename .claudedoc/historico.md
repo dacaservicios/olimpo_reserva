@@ -10,6 +10,12 @@
 
 ## Épicas completadas
 
+### [x] Sockets: relays y listeners sin emisor quitados (2026-09-25, desplegado en producción 2026-09-25 junto con olimpo)
+- El servidor de sockets de esta app es independiente del de olimpo, y sus clientes no emiten nada: hasta los joins de `general.js` están comentados.
+- `app/config/webSocket.js` queda solo con `joinUsuario`/`joinNivel`/`joinSucursal`. `app/public/java/webSocket.js` queda solo con la conexión (`var socket`, que usa `general.js`).
+- Se quitaron `actualizaModulo`, `actualizaAcceso`, `actualizaFechaServicio`, `sunatVenta`, `actualizaCaja`, `actualizaNombreSucursal`, `actualizaLogoSucursal`, `actualizaSaldo*`, `loginUsuario*`, `vibracion`, `notificacion` y `opcionesToast`.
+- **Revisado, sin impacto aquí:** los cambios de olimpo en logos de empresa/sucursal (`USP_UPD_INS_EMPRESA`/`SUCURSAL`) no los llama esta app, y no muestra logos de empresa ni de sucursal.
+
 ### [x] API de cliente reducida a `buscar` + revisión de `NUMERO_BAJA` (2026-09-25, desplegado en producción 2026-09-25 junto con olimpo)
 - Se quitaron tres rutas; la UI no usaba ninguna:
   - `GET /api/cliente/listar`: la rama `'cliente'` de olimpo filtra por la empresa del `SEG_USUARIO` cuyo ID coincide con el ID del cliente, así que podía exponer todos los clientes de esa empresa.
