@@ -7,20 +7,14 @@
 
 ## TAREA ACTUAL / PENDIENTES
 
-### [x] API de cliente reducida a `buscar` (2026-09-25, solo local — falta desplegar)
-- Se quitaron tres rutas; la UI no usaba ninguna:
-  - `GET /api/cliente/listar`: la rama `'cliente'` de olimpo filtra por la empresa del `SEG_USUARIO` cuyo ID coincide con el ID del cliente. Si un cliente tenía el mismo ID que un usuario, recibía **todos los clientes** de esa empresa.
-  - `GET /api/cliente/listar_wp`: la rama `'cliente_wp'` marcaba como leída y devolvía la mensajería/WhatsApp de cualquier sucursal pasada por la URL.
-  - `PUT /api/cliente/editar`: el modelo `editarCliente` estaba roto. El perfil se edita con `PUT /api/acceso/datos/:sesId`.
-- Se reescribieron `clienteApi.js`, `clienteControllers.js` y `clienteModels.js`, que quedan solo con `buscar` (`'cliente_reserva'`).
-- En `reserva.js` (`nuevaReservaFecha`), el paso de cliente usa directamente `/api/cliente/buscar/{sesId}/{sesId}`, sin el fallback anterior.
-- [ ] Probar en el navegador "Nueva Reserva": el paso de cliente debe mostrar al cliente logueado.
+> El ajuste por el multitenant de olimpo y la reducción de la API de cliente están en producción desde 2026-09-25: ver `historico.md`.
 
-> El ajuste por el multitenant de olimpo está en producción desde 2026-09-25: ver `historico.md`.
+- [ ] Confirmar en producción que en "Nueva Reserva" el paso de cliente muestra al cliente logueado (tras quitar `/api/cliente/listar`).
 
-### [x] Revisado: correlativo `NUMERO_BAJA` por empresa en olimpo (2026-09-25, solo local)
-- olimpo parcheó `USP_UPD_INS_DETALLE 'venta'` (script `multitenant_numero_baja.sql`).
-- **Sin impacto aquí:** esta app llama a `USP_UPD_INS_DETALLE` solo con `'mensajeReserva'` y con la tabla de `listarReservaDetalle`, nunca con `'venta'`. No hace falta desplegarla junto con olimpo.
+### [x] Sockets: relays y listeners sin emisor quitados (2026-09-25, solo local — falta desplegar junto con olimpo)
+- El servidor de sockets de esta app es independiente del de olimpo, y sus clientes no emiten nada: hasta los joins de `general.js` están comentados.
+- `app/config/webSocket.js` queda solo con `joinUsuario`/`joinNivel`/`joinSucursal`. `app/public/java/webSocket.js` queda solo con la conexión (`var socket`, que usa `general.js`).
+- Se quitaron `actualizaModulo`, `actualizaAcceso`, `actualizaFechaServicio`, `sunatVenta`, `actualizaCaja`, `actualizaNombreSucursal`, `actualizaLogoSucursal`, `actualizaSaldo*`, `loginUsuario*`, `vibracion`, `notificacion` y `opcionesToast`.
 
 ### [x] Login por número de documento + primer ingreso + recuperación (2026-09-09)
 - Login: usuario = `NUMERO_DOCUMENTO`. Primera vez, contraseña = documento (`CONTRASENA` NULL en BD).

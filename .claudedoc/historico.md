@@ -10,6 +10,17 @@
 
 ## Épicas completadas
 
+### [x] API de cliente reducida a `buscar` + revisión de `NUMERO_BAJA` (2026-09-25, desplegado en producción 2026-09-25 junto con olimpo)
+- Se quitaron tres rutas; la UI no usaba ninguna:
+  - `GET /api/cliente/listar`: la rama `'cliente'` de olimpo filtra por la empresa del `SEG_USUARIO` cuyo ID coincide con el ID del cliente, así que podía exponer todos los clientes de esa empresa.
+  - `GET /api/cliente/listar_wp`: la rama `'cliente_wp'` marcaba como leída y devolvía la mensajería/WhatsApp de cualquier sucursal pasada por la URL.
+  - `PUT /api/cliente/editar`: el modelo `editarCliente` estaba roto. El perfil se edita con `PUT /api/acceso/datos/:sesId`.
+- `clienteApi.js`, `clienteControllers.js` y `clienteModels.js` quedan solo con `buscar` (`'cliente_reserva'`).
+- En `reserva.js` (`nuevaReservaFecha`), el paso de cliente usa `/api/cliente/buscar/{sesId}/{sesId}` (el propio cliente).
+- **Revisado, sin impacto aquí:**
+  - olimpo corrigió `USP_UPD_INS_DETALLE 'venta'` (`NUMERO_BAJA` por empresa) y `USP_DEL_ELIMINA 'sucursal'`.
+  - Esta app solo usa `'mensajeReserva'`/`listarReservaDetalle` y `'reserva_cliente'`.
+
 ### [x] Multitenant de olimpo — ajustes en esta app (2026-09-24 → 2026-09-25, desplegado en producción 2026-09-25 junto con olimpo)
 En olimpo `_idSesion` es un usuario de `SEG_USUARIO`; aquí es el **ID del cliente**. Los SPs compartidos se aislaron por empresa, así que esta app usa ramas y tipos propios, filtrados por la empresa del cliente:
 - **Lectura:**

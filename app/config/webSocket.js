@@ -1,6 +1,6 @@
 const SocketIO = (server)=>{
     const io = require('socket.io')(server);
- 
+
     io.on('connection', (socket)=>{
         //console.log("nuevo usuario conectado al socket: "+socket.id);
 
@@ -16,48 +16,10 @@ const SocketIO = (server)=>{
             socket.join(data.sucursal);
         });
 
-        /*socket.on("join", function(data){
-            socket.join(data.empresa);
-            //console.log("connected to room: "+data.empresa);
-            //console.log(io.nsps["/"].adapter);
-        });*/
-
-        //************************************************************* */
-        socket.on('actualizaModulo', (data)=>{
-            io.sockets.emit('actualizaModulo', data);
-        });
-
-        socket.on('actualizaAcceso', (data)=>{
-            io.sockets.in(data.usuario).emit('actualizaAcceso', data);
-        });
-
-        socket.on('actualizaFechaServicio', (data)=>{
-            io.sockets.in(data.sucursal).emit('actualizaFechaServicio', data);
-        });
-
-        socket.on('sunatVenta', (data)=>{
-            io.sockets.in(data.administrador).emit('sunatVenta', data);
-        });
-
-        socket.on('actualizaCaja', (data)=>{
-            io.sockets.in(data.sucursal).emit('actualizaCaja', data);
-        });
-
-        socket.on('actualizaNombreSucursal', (data)=>{
-            io.sockets.in(data.usuario).emit('actualizaNombreSucursal', data);
-        });
-
-        socket.on('actualizaLogoSucursal', (data)=>{
-            io.sockets.in(data.sucursal).emit('actualizaLogoSucursal', data);
-        });
-
-        /*socket.on('loginUsuarioAdmin', (data)=>{
-            io.sockets.in(data.nivelAdmin).emit('loginUsuarioAdmin', data);
-        });
-
-        socket.on('loginUsuarioSuper', (data)=>{
-            io.sockets.in(data.nivelSuper).emit('loginUsuarioSuper', data);
-        });*/
+        // Este servidor es independiente del de olimpo y ningún cliente de esta app emite eventos (solo los
+        // joins de general.js). Se quitaron todos los relays copiados de olimpo, ya que no tenían emisor:
+        // actualizaModulo, actualizaAcceso, actualizaFechaServicio, sunatVenta, actualizaCaja,
+        // actualizaNombreSucursal, actualizaLogoSucursal y loginUsuario*.
 
     })
 }
